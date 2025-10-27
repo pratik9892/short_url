@@ -1,12 +1,12 @@
 import { Router } from "express";
-import userRouter from "./user.routes.js";
-import linkRouter from "./link.routes.js";
-import analyticsRouter from "./analytics.routes.js";
+import { userRouter } from "../../domains/user/user.route.js";
+import { linkRouter } from "../../domains/link/link.route.js";
+import { analyticsRouter } from "../../domains/analytics/analytics.route.js";
 
 const v1Router = Router()
 
-v1Router.use("/user" , userRouter)
+v1Router.use("/auth" , userRouter)
 v1Router.use("/link" , linkRouter)
 v1Router.use("/analytics" , analyticsRouter)
 
-export default v1Router
+export {v1Router}

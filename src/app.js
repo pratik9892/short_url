@@ -1,6 +1,6 @@
 import express from "express"
 import bodyParser from "body-parser"
-import apiRouter from "./routes/index.js"
+import { apiRouter } from "./routes/index.js"
 import {config} from "./config/server.config.js"
 import { errHandler } from "./utils/error.util.js"
 
@@ -13,7 +13,8 @@ app.use(bodyParser.text())
 // routes
 app.use("/api" , apiRouter)
 
-app.get("" , (req,res) => {
+app.get("/" , (req,res) => {
+
     return res.json({
         status : true,
         message : "OK"

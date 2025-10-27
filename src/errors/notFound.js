@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { baseError } from "./baseError";
+import { baseError } from "./baseError.js";
 
 class NotFound extends baseError {
     constructor(resourceName,resourceValue){

@@ -1,8 +1,8 @@
 import { StatusCodes } from "http-status-codes";
-import { baseError } from "../errors/baseError";
+import { baseError } from "../errors/baseError.js";
 
 
-export function errHandler(req,res,next,err){
+export function errHandler(err,req,res,next){
     if(err instanceof baseError){
         return res.status(err.statuscode).json({
             success : false,
