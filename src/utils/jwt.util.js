@@ -15,11 +15,5 @@ export function generateRefreshToken(payload){
     return jwt.sign(payload,REFRESH_TOKEN_SECRET,{expiresIn:REFRESH_TOKEN_EXPIRY})
 }
 
-export function verifyRefreshToken(token){
-    try {
-        return jwt.verify(token,REFRESH_TOKEN_SECRET)
-    } catch (error) {
-        return null
-    }
-}
+
 

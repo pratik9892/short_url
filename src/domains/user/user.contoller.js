@@ -73,7 +73,20 @@ async function updateUser(req,res,next){
 
 async function logout(req,res,next){
     try {
-     throw new NotImplemented("logout")
+        const userId = req.user._id
+
+        const result = await userService.logout(userId)
+
+        const options = {
+            httpOnly : true,
+            secure : true
+        }
+
+        return res
+            .status(StatusCodes.NO_CONTENT)
+            .clearCookie("accessTokens",options)
+            .clearCookie("refreshToken",options)
+            .send() //no json as 204 status code so no content
     } catch (error) {
         next(error)
     }

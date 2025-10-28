@@ -1,7 +1,6 @@
 import { ConflictError } from "../../errors/conflictError.js";
 import { UnauthorizedError } from "../../errors/unauthorizedError.js";
-import { UserRepository } from "./user.repo.js";
-import {generateAccessToken,generateRefreshToken,verifyRefreshToken} from "../../utils/jwt.util.js"
+import {generateAccessToken,generateRefreshToken} from "../../utils/jwt.util.js"
 import bcrypt from "bcrypt"
 
 export class UserService{
@@ -46,15 +45,12 @@ export class UserService{
 
     async login(userData){
         try {
-            console.log(userData);
-            
             //we will get userdata such as username and password from controller
             //we first get the user from findbyusername
             //if we donnot get user tell user to register and if we get user move to next step
             //if we find user we will compare the password given by user and one in the db
             //if pass is correct generate tokens and save if pass is wrong send wrong pass error
             const userExists = await this.UserRepository.getUser(null,userData.email,true,false)
-            console.log(userExists);
             
             if(!userExists){
                 throw new UnauthorizedError("Invalid Credentials")
@@ -69,6 +65,17 @@ export class UserService{
             const {accessToken,refreshToken} = await this.createAuthTokens(userExists)
 
             return {userExists , tokens : {accessToken,refreshToken}}
+        } catch (error) {
+            console.log(error)
+            throw error
+        }
+    }
+
+    async logout(userId){
+        try {
+            const logoutUser = await this.UserRepository.updateRefreshToken(userId,null)
+
+            return logoutUser;
         } catch (error) {
             console.log(error)
             throw error

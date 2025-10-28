@@ -28,5 +28,5 @@ app.use(errHandler)
 app.listen(config.server.PORT, async () => {
     console.log("Server is runnig on port " + config.server.PORT)
     await connectToDB()
-    console.log("Connecte to DB successfully")
+    console.log("Connected to DB successfully")
 })
