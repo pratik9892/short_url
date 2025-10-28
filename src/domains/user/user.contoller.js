@@ -3,12 +3,28 @@ import { NotImplemented } from "../../errors/notImplemented.js"
 import { UserRepository } from "./user.repo.js"
 import { UserService } from "./user.service.js"
 
-const UserrService = new UserService(new UserRepository)
+const userService = new UserService(new UserRepository)
 
 
 async function login(req,res,next){
     try {
-        throw new NotImplemented("login")
+        const {user , tokens} = await userService.login(req.body)
+
+        const options = {
+            httpOnly : true,
+            secure : true
+        }
+
+        return res
+           .status(StatusCodes.OK)
+           .cookie("accessTokens",tokens.accessToken,options)
+           .cookie("refreshToken",tokens.refreshToken,options)
+           .json({
+            success : true,
+            message : "User Loggedin Successfully",
+            error : {},
+            data : user
+           })
     } catch (error) {
         next(error)
     }
@@ -16,11 +32,13 @@ async function login(req,res,next){
 
 async function register(req,res,next){
     try {
-        const {user , tokens} = await UserrService.register(req.body)
-        console.log(req.body)
-        return res.status(StatusCodes.CREATED).json({
+        const user = await userService.register(req.body)
+        
+        return res
+           .status(StatusCodes.CREATED)
+           .json({
             success : true,
-            message : "Signup Successful",
+            message : "User Signup Successful",
             error : {},
             data : user
         })
