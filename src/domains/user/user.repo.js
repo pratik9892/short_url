@@ -22,7 +22,7 @@ export class UserRepository {
 
   async getUserWithId(id) {
     try {
-      const user = await User.findById(id).select("-password -refreshToken");
+      const user = await User.findById(id);
       if (!user) {
         throw new NotFound("User", id);
       }
@@ -32,21 +32,20 @@ export class UserRepository {
     }
   }
 
-  async getUser(username,email,shouldThrow = true, withPassword = false) {
+  async getUser(username, email, shouldThrow = true, withPassword = false) {
     try {
       let user;
       let queryConditions = [];
-      let selectFields = "-password -refreshToken";
 
-      if(email){
-        queryConditions.push({email : email})
-      } 
-
-      if(username){
-        queryConditions.push({username : username.toLowerCase()})
+      if (email) {
+        queryConditions.push({ email: email });
       }
 
-      let query = {$or : queryConditions}
+      if (username) {
+        queryConditions.push({ username: username.toLowerCase() });
+      }
+
+      let query = { $or: queryConditions };
 
       user = await User.findOne(query);
 
@@ -72,7 +71,7 @@ export class UserRepository {
           email: userData.email,
         },
         { new: true }
-      );
+      ).select("-password -refreshToken");
 
       if (!updatedUser) {
         throw new NotFound("Update User", id);
@@ -96,7 +95,30 @@ export class UserRepository {
       if (!updatedRefreshToken) {
         throw new NotFound("Refresh Token", id);
       }
+
+      return updatedRefreshToken;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async updatePassword(id, newPassword) {
+    try {
+      const updatePassword = await User.findByIdAndUpdate(
+        id,
+        {
+          password: newPassword,
+        },
+        { new: true }
+      );
+
+      if (!updatePassword) {
+        throw new NotFound("Password update", id);
+      }
+
+      return updatePassword;
+    } catch (error) {
+      console.log(error);
       throw error;
     }
   }

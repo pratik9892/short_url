@@ -9,7 +9,8 @@ const userService = new UserService(new UserRepository)
 async function login(req,res,next){
     try {
         const {user , tokens} = await userService.login(req.body)
-
+        // console.log(user,tokens);
+        
         const options = {
             httpOnly : true,
             secure : true
@@ -17,7 +18,7 @@ async function login(req,res,next){
 
         return res
            .status(StatusCodes.OK)
-           .cookie("accessTokens",tokens.accessToken,options)
+           .cookie("accessToken",tokens.accessToken,options)
            .cookie("refreshToken",tokens.refreshToken,options)
            .json({
             success : true,
@@ -49,7 +50,16 @@ async function register(req,res,next){
 
 async function getUser(req,res,next){
     try {
-        throw new NotImplemented("get user")
+        const user = await userService.getUser(req.user.id)
+
+        return res
+            .status(StatusCodes.ACCEPTED)
+            .json({
+                status : true,
+                message : "User Fetched Successfully",
+                error : {},
+                data : user
+            })
     } catch (error) {
         next(error)
     }
@@ -57,7 +67,19 @@ async function getUser(req,res,next){
 
 async function updatePassword(req,res,next){
     try {
-       throw new NotImplemented("update password")
+        console.log(req.body);
+        console.log(req.user);
+        
+        const updatedUser = await userService.updatePassword(req.user.id,req.body.oldPassword,req.body.newPassword)
+
+        return res
+            .status(StatusCodes.OK)
+            .json({
+                status : true,
+                message : "User Password Updated Successfully",
+                error : {},
+                data : updatedUser
+            })
     } catch (error) {
         next(error)
     }
@@ -65,7 +87,17 @@ async function updatePassword(req,res,next){
 
 async function updateUser(req,res,next){
     try {
-       throw new NotImplemented("update user")
+       
+        const updatedUser = await userService.updateUser(req.user.id,req.body)
+        
+        return res
+           .status(StatusCodes.OK)
+           .json({
+            status : true,
+            message : "User Updated Successfully",
+            error : {},
+            data : updatedUser
+           })
     } catch (error) {
         next(error)
     }
@@ -84,9 +116,30 @@ async function logout(req,res,next){
 
         return res
             .status(StatusCodes.NO_CONTENT)
-            .clearCookie("accessTokens",options)
+            .clearCookie("accessToken",options)
             .clearCookie("refreshToken",options)
             .send() //no json as 204 status code so no content
+    } catch (error) {
+        next(error)
+    }
+}
+
+async function refreshAccessToken(req,res,next){
+    try {
+        // console.log(req.cookies.refreshToken);
+        
+        const {newRefreshToken,newAccessToken} = await userService.refreshAccessToken(req.cookies.refreshToken || req.body.refreshToken)
+        
+        const options = {
+            httpOnly : true,
+            secure : true
+        }
+
+        return res
+            .status(StatusCodes.NO_CONTENT)
+            .cookie("accessToken" , newAccessToken , options)
+            .cookie("refreshToken" , newRefreshToken , options)
+            .send() // no json as 204 status code so no content
     } catch (error) {
         next(error)
     }
@@ -100,5 +153,6 @@ export {
     getUser,
     updatePassword,
     logout,
-    updateUser
+    updateUser,
+    refreshAccessToken
 }

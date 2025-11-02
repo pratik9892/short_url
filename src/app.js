@@ -5,7 +5,9 @@ import { errHandler } from "./utils/error.util.js"
 import { connectToDB } from "./config/mongodb.config.js"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import { configDotenv } from "dotenv"
 
+configDotenv()
 const app = express()
 
 app.use(cors())
@@ -27,6 +29,5 @@ app.use(errHandler)
 
 app.listen(config.server.PORT, async () => {
     console.log("Server is runnig on port " + config.server.PORT)
-    await connectToDB()
-    console.log("Connected to DB successfully")
+     await connectToDB()
 })

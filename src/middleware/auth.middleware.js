@@ -8,8 +8,8 @@ export async function verifyJWT(req,res,next){
 
     let token = req.header("Authorization")?.replace("Bearer " , "");
     
-    if(!token && req.cookies?.accessTokens){
-        token = req.cookies?.accessTokens
+    if(!token && req.cookies?.accessToken){
+        token = req.cookies?.accessToken
     }
     // console.log(token);
     
