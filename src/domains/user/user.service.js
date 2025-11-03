@@ -1,6 +1,7 @@
 import { ConflictError } from "../../errors/conflictError.js";
 import { NotFound } from "../../errors/NotFound.js";
 import { UnauthorizedError } from "../../errors/unauthorizedError.js";
+import { emailQueue } from "../../infrastructure/queue/emailQueue.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -51,6 +52,12 @@ export class UserService {
         password: hashedPassword,
       });
 
+      
+      await emailQueue.add('sendWelcomeEmail' , {
+        email : userData.email,
+        username : userData.username
+      })
+
       return registeredUser;
     } catch (error) {
       console.log(error);
@@ -88,7 +95,6 @@ export class UserService {
       const { accessToken, refreshToken } = await this.createAuthTokens(
         userExists
       );
-      console.log(userExists);
 
       return { user: userExists, tokens: { accessToken, refreshToken } };
     } catch (error) {

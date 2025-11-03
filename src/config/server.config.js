@@ -28,5 +28,10 @@ export const config = {
     redis: {
         HOST: process.env.REDIS_HOST || '127.0.0.1',
         PORT: parseInt(process.env.REDIS_PORT) || 6379,
+    },
+
+    email : {
+        SENDGRID_APIKEY : process.env.SENDGRID_API_KEY,
+        SENDGRID_SENDER_EMAIL : process.env.SENDER_EMAIL
     }
 };
