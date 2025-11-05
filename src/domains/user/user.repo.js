@@ -11,7 +11,7 @@ export class UserRepository {
         email: userData.email,
         password: userData.password,
       });
-      console.log(user + " user repo create user func");
+      
 
       return user;
     } catch (error) {

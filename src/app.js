@@ -6,6 +6,7 @@ import { connectToDB } from "./config/mongodb.config.js"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import { configDotenv } from "dotenv"
+import { redirectToLongUrl } from "./domains/link/link.contoller.js"
 
 configDotenv()
 const app = express()
@@ -15,13 +16,14 @@ app.use(express.json())
 app.use(express.urlencoded({extended:true}))
 app.use(cookieParser())
 // routes
+app.get("/:shortCode", redirectToLongUrl)
 app.use("/api" , apiRouter)
 
-app.get("/" , (req,res) => {
+app.get("/health" , (req,res) => {
 
     return res.json({
         status : true,
-        message : "OK"
+        message : "Everything is healty"
     })
 })
 
