@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { NotFound } from "../../errors/NotFound.js";
 import { Link } from "./link.model.js";
 
@@ -23,11 +24,33 @@ export class LinkRepository {
         }
     }
 
-    async getShortUrl(shortCode){
+    async getLongUrl(shortCode){
         try {
-            const shortUrl = await Link.findOne({shortCode : shortCode})
+            const longUrl = await Link.findOne({shortCode : shortCode})
 
             
+            return longUrl;
+        } catch (error) {
+            console.log(error);
+            throw error
+        }
+    }
+
+    async getShortUrlByIdAndOwner(linkId, ownerId){
+        try {
+            if(!mongoose.Types.ObjectId.isValid(linkId)){
+                throw new NotFound("Link", linkId)
+            }
+
+            const shortUrl = await Link.findOne({
+                _id : linkId,
+                linkOwner : ownerId
+            })
+
+            if(!shortUrl){
+                throw new NotFound("Link", linkId)
+            }
+
             return shortUrl;
         } catch (error) {
             console.log(error);
@@ -49,17 +72,43 @@ export class LinkRepository {
         }
     }
 
-    async updateShortUrl(linkId,linkData){
+    async getShortUrl(shortCode){
         try {
-            const updatedShortUrl = await Link.findByIdAndUpdate(
-                linkId,
+            const shortUrl = await Link.findOne({shortCode : shortCode})
+
+            
+            return shortUrl;
+        } catch (error) {
+            console.log(error);
+            throw error
+        }
+    }
+
+    async updateShortUrl(linkId, ownerId, linkData){
+        try {
+            if(!mongoose.Types.ObjectId.isValid(linkId)){
+                throw new NotFound("Link", linkId)
+            }
+
+            const updatedShortUrl = await Link.findOneAndUpdate(
                 {
-                    longUrl : linkData.longUrl
+                    _id : linkId,
+                    linkOwner : ownerId
+                },
+                {
+                    $set : {
+                        ...(linkData.linkName ? { linkName : linkData.linkName } : {}),
+                        ...(linkData.longUrl ? { longUrl : linkData.longUrl } : {})
+                    }
                 },
                 {
                     new : true
                 }
             )
+
+            if(!updatedShortUrl){
+                throw new NotFound("Link", linkId)
+            }
 
             return updatedShortUrl
         } catch (error) {
@@ -87,9 +136,20 @@ export class LinkRepository {
         }
     }
 
-    async deleteShortUrl(linkId){
+    async deleteShortUrl(linkId, ownerId){
         try {
-            const deletedLink = await Link.findByIdAndDelete(linkId)
+            if(!mongoose.Types.ObjectId.isValid(linkId)){
+                throw new NotFound("Link", linkId)
+            }
+
+            const deletedLink = await Link.findOneAndDelete({
+                _id : linkId,
+                linkOwner : ownerId
+            })
+
+            if(!deletedLink){
+                throw new NotFound("Link", linkId)
+            }
             
             return deletedLink
         } catch (error) {

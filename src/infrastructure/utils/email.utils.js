@@ -19,7 +19,7 @@ export async function sendWelcomeEmail(email,username){
     const message = {
         to: email,
         from: senderEmail,
-        subject: `Welcome to the App, ${username}! Your Account is Ready.`,
+        subject: `Welcome to the ShortURL App, ${username}! Your Account is Ready.`,
         text: `Hello ${username},\n\nThank you for signing up! We're excited to have you onboard.`,
         html: `
             <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
