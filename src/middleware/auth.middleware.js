@@ -11,7 +11,7 @@ export async function verifyJWT(req,res,next){
     if(!token && req.cookies?.accessToken){
         token = req.cookies?.accessToken
     }
-    // console.log(token);
+     // console.log(token);
     
     
     if(!token){

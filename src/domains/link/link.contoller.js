@@ -1,5 +1,4 @@
 import { StatusCodes } from "http-status-codes"
-import { NotImplemented } from "../../errors/notImplemented.js"
 import { LinkRepository } from "./link.repo.js"
 import { LinkService } from "./link.service.js"
 import { analyticsQueue } from "../../infrastructure/queue/analyticsQueue.js"
@@ -34,7 +33,7 @@ async function redirectToLongUrl(req,res,next){
 
         const link = await linkService.getLinkByShortCode(shortCode)
 
-        // fire-and-forget: track click asynchronously via queue
+        // fire-and-forget
         try {
             const ip =
                 (req.headers["x-forwarded-for"] &&
@@ -129,8 +128,9 @@ async function updateShortUrl(req,res,next){
 
 async function deleteShortUrl(req,res,next){
     try {
+        
         const { id } = req.params
-
+        
         await linkService.deleteUserShortUrl(id, req.user._id)
 
         return res

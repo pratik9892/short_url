@@ -2,11 +2,14 @@ import { ConflictError } from "../../errors/conflictError.js";
 import { InternalServerError } from "../../errors/internalServerError.js";
 import { NotFound } from "../../errors/NotFound.js";
 import { generateShortCode } from "../../utils/shortCode.util.js";
+import { AnalyticsRepository } from "../analytics/analytics.repo.js";
+import { AnalyticsService } from "../analytics/analytics.service.js";
 
 export class LinkService{
     constructor(linkRepository){
         this.LinkRepository = linkRepository
     }
+    analyticsService = new AnalyticsService(new AnalyticsRepository())
 
     async createShortUrl(linkData){
         try {
@@ -109,6 +112,9 @@ export class LinkService{
 
             const updatedShortUrl = await this.LinkRepository.updateShortUrl(linkId, ownerId, linkData)
 
+            // for updating long url in analytics documents when long url is updated
+            await this.analyticsService.updateLongUrl(linkId, linkData.longUrl);
+
             return updatedShortUrl
         } catch (error) {
             throw error;
@@ -118,6 +124,9 @@ export class LinkService{
     async deleteUserShortUrl(linkId, ownerId){
         try {
             const deletedShortUrl = await this.LinkRepository.deleteShortUrl(linkId, ownerId)
+
+            // for deleting analytics documents when link is deleted
+            await this.analyticsService.onDeleteCascadeAanlytics(linkId);
 
             return deletedShortUrl
         } catch (error) {

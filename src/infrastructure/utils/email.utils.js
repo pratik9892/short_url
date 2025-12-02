@@ -1,6 +1,9 @@
 import sgMail from "@sendgrid/mail"
 import { config } from "../../config/server.config.js"
 import {ConflictError} from "../../errors/conflictError.js"
+import { configDotenv } from "dotenv"
+
+configDotenv()
 
 if(config.email.SENDGRID_APIKEY){
     sgMail.setApiKey(config.email.SENDGRID_APIKEY)
