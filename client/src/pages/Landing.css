@@ -1,0 +1,65 @@
+.landing {
+  position: relative;
+  min-height: calc(100vh - var(--nav-h));
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+}
+
+.landing-atmosphere {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(160deg, rgba(15, 118, 110, 0.1), transparent 45%),
+    radial-gradient(circle at 70% 40%, rgba(20, 32, 28, 0.08), transparent 42%);
+  pointer-events: none;
+}
+
+.landing-hero {
+  position: relative;
+  padding: 4.5rem 0 5rem;
+  max-width: 38rem;
+}
+
+.brand-mark {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 8vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.landing-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0 0 1rem;
+  color: var(--ink);
+}
+
+.landing-lead {
+  margin: 0 0 1.75rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 32rem;
+}
+
+.landing-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (max-width: 520px) {
+  .landing-hero {
+    padding: 3rem 0 4rem;
+  }
+
+  .landing-cta .btn {
+    width: 100%;
+  }
+}
