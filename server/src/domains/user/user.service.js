@@ -67,11 +67,6 @@ export class UserService {
 
   async login(userData) {
     try {
-      //we will get userdata such as username and password from controller
-      //we first get the user from findbyusername
-      //if we donnot get user tell user to register and if we get user move to next step
-      //if we find user we will compare the password given by user and one in the db
-      //if pass is correct generate tokens and save if pass is wrong send wrong pass error
       const userExists = await this.UserRepository.getUser(
         null,
         userData.email,
@@ -81,6 +76,12 @@ export class UserService {
 
       if (!userExists) {
         throw new UnauthorizedError("Invalid Credentials");
+      }
+
+      if (!userExists.password) {
+        throw new UnauthorizedError(
+          "This account uses Google sign-in. Continue with Google."
+        );
       }
 
       const isPasswordCorrect = await bcrypt.compare(
@@ -101,6 +102,71 @@ export class UserService {
       console.log(error);
       throw error;
     }
+  }
+
+  async loginWithGoogleProfile(profile) {
+    const { googleId, email, fullName, avatar } = profile;
+
+    if (!googleId || !email) {
+      throw new UnauthorizedError("Google account did not provide email");
+    }
+
+    let user = await this.UserRepository.findByGoogleId(googleId);
+
+    if (!user) {
+      user = await this.UserRepository.findByEmail(email);
+
+      if (user) {
+        // Link Google to an existing email/password account
+        user = await this.UserRepository.linkGoogleAccount(user._id, {
+          googleId,
+          avatar,
+        });
+      } else {
+        const username = await this.#uniqueUsernameFromEmail(email);
+        user = await this.UserRepository.register({
+          username,
+          fullName: fullName || username,
+          email,
+          password: null,
+          googleId,
+          avatar,
+          authProvider: "google",
+        });
+
+        try {
+          await emailQueue.add("sendWelcomeEmail", {
+            email,
+            username,
+          });
+        } catch (queueError) {
+          console.error("Failed to enqueue welcome email", queueError);
+        }
+      }
+    }
+
+    const { accessToken, refreshToken } = await this.createAuthTokens(user);
+    return { user, tokens: { accessToken, refreshToken } };
+  }
+
+  async #uniqueUsernameFromEmail(email) {
+    const local = String(email)
+      .split("@")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "")
+      .slice(0, 16) || "user";
+
+    let candidate = local;
+    let i = 0;
+    while (await this.UserRepository.usernameExists(candidate)) {
+      i += 1;
+      candidate = `${local}${i}`.slice(0, 20);
+      if (i > 50) {
+        candidate = `user${Date.now().toString(36)}`.slice(0, 20);
+        break;
+      }
+    }
+    return candidate;
   }
 
   async logout(userId) {
@@ -152,6 +218,12 @@ export class UserService {
 
       if (!loggedUser) {
         throw new NotFound("User not found", userId);
+      }
+
+      if (!loggedUser.password) {
+        throw new ConflictError(
+          "Password login is not set for this Google account"
+        );
       }
 
       const isPassCorrect = await bcrypt.compare(

@@ -33,5 +33,5 @@ export const config = {
     email : {
         SENDGRID_APIKEY : process.env.SENDGRID_API_KEY,
         SENDGRID_SENDER_EMAIL : process.env.SENDER_EMAIL
-    }
+    },
 };

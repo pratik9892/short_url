@@ -14,8 +14,9 @@ export class LinkService{
     async createShortUrl(linkData){
         try {
 
-            if(!linkData.linkName || !linkData.longUrl){
-                throw new ConflictError("Name or URL not passed")
+            // longUrl is enforced at the route validation layer; keep a service guard as defense in depth
+            if (!linkData.longUrl) {
+                throw new ConflictError("URL not passed")
             }
 
             const shortCode = generateShortCode()
@@ -30,7 +31,7 @@ export class LinkService{
             }
 
             const shortUrl = {
-                linkName : linkData.linkName,
+                linkName : linkData.linkName || "Default Name",
                 shortCode : shortCode,
                 longUrl : linkData.longUrl,
                 linkOwner : linkData.linkOwner

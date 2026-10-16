@@ -4,20 +4,47 @@ import { User } from "./user.model.js";
 export class UserRepository {
   async register(userData) {
     try {
-      console.log("user register func start user repo");
       const user = await User.create({
         username: userData.username.toLowerCase(),
         fullName: userData.fullName,
-        email: userData.email,
-        password: userData.password,
+        email: userData.email.toLowerCase(),
+        password: userData.password ?? null,
+        googleId: userData.googleId ?? undefined,
+        avatar: userData.avatar ?? null,
+        authProvider: userData.authProvider || "local",
       });
-      
 
       return user;
     } catch (error) {
       console.log(error);
       throw error;
     }
+  }
+
+  async findByGoogleId(googleId) {
+    return User.findOne({ googleId });
+  }
+
+  async findByEmail(email) {
+    if (!email) return null;
+    return User.findOne({ email: email.toLowerCase() });
+  }
+
+  async linkGoogleAccount(userId, { googleId, avatar }) {
+    return User.findByIdAndUpdate(
+      userId,
+      {
+        googleId,
+        ...(avatar ? { avatar } : {}),
+        authProvider: "google",
+      },
+      { new: true }
+    );
+  }
+
+  async usernameExists(username) {
+    const existing = await User.findOne({ username: username.toLowerCase() });
+    return Boolean(existing);
   }
 
   async getUserWithId(id) {

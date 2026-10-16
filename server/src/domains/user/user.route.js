@@ -14,7 +14,7 @@ const userRouter = Router();
 
 userRouter.post("/login", login);
 userRouter.post("/register", register);
-userRouter.get("/refresh-token",refreshAccessToken);
+userRouter.get("/refresh-token", refreshAccessToken);
 
 // secured routes
 userRouter.get("/logout", verifyJWT, logout);
