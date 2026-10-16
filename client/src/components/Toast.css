@@ -1,0 +1,24 @@
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  z-index: 50;
+  background: var(--ink);
+  color: #fff;
+  padding: 0.75rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  animation: fadeUp 0.25s ease both;
+  max-width: min(90vw, 420px);
+  text-align: center;
+}
+
+.toast-success {
+  background: var(--accent-ink);
+}
+
+.toast-error {
+  background: var(--danger);
+}

@@ -1,0 +1,18 @@
+:root {
+  --bg: #f4f7f5;
+  --bg-elevated: #ffffff;
+  --ink: #14201c;
+  --muted: #5c6b64;
+  --line: #d7e0db;
+  --accent: #0f766e;
+  --accent-soft: #d9f2ee;
+  --accent-ink: #0a4f49;
+  --danger: #b42318;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Outfit", "Segoe UI", sans-serif;
+  --shadow-soft: 0 12px 40px rgba(20, 32, 28, 0.06);
+  --max: 960px;
+  --nav-h: 64px;
+}
