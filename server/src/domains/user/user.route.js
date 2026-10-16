@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getUser,
   login,
+  googleLogin,
   logout,
   refreshAccessToken,
   register,
@@ -13,6 +14,7 @@ import { verifyJWT } from "../../middleware/auth.middleware.js";
 const userRouter = Router();
 
 userRouter.post("/login", login);
+userRouter.post("/google", googleLogin);
 userRouter.post("/register", register);
 userRouter.get("/refresh-token", refreshAccessToken);
 

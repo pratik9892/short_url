@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../components/Toast'
+import GoogleSignIn from '../components/GoogleSignIn'
 import './Auth.css'
 
 export default function Login() {
@@ -35,6 +36,12 @@ export default function Login() {
         <div className="card auth-card">
           <h1>Welcome back</h1>
           <p className="muted">Log in to manage your short links.</p>
+
+          <GoogleSignIn onError={setError} />
+
+          <div className="auth-divider" aria-hidden="true">
+            <span>or</span>
+          </div>
 
           <form onSubmit={onSubmit}>
             <label className="field">

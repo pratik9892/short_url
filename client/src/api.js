@@ -58,6 +58,15 @@ export const api = {
     return res
   },
 
+  async googleLogin(credential) {
+    const res = await request('/auth/google', {
+      method: 'POST',
+      body: { credential },
+    })
+    if (res?.data?.accessToken) setAccessToken(res.data.accessToken)
+    return res
+  },
+
   async logout() {
     try {
       await request('/auth/logout', { method: 'GET' })

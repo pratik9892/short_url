@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes"
 import { UserRepository } from "./user.repo.js"
 import { UserService } from "./user.service.js"
 import { authCookieOptions } from "../../utils/cookie.util.js"
+import { verifyGoogleIdToken } from "./googleAuth.service.js"
 
 const userService = new UserService(new UserRepository())
 
@@ -30,6 +31,17 @@ async function login(req, res, next) {
   try {
     const { user, tokens } = await userService.login(req.body)
     return sendAuthSuccess(res, user, tokens, "User Loggedin Successfully")
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function googleLogin(req, res, next) {
+  try {
+    const { credential } = req.body || {}
+    const profile = await verifyGoogleIdToken(credential)
+    const { user, tokens } = await userService.loginWithGoogleProfile(profile)
+    return sendAuthSuccess(res, user, tokens, "Google login successful")
   } catch (error) {
     next(error)
   }
@@ -138,6 +150,7 @@ async function refreshAccessToken(req, res, next) {
 
 export {
   login,
+  googleLogin,
   register,
   getUser,
   updatePassword,

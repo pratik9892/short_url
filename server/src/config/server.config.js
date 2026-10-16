@@ -34,4 +34,8 @@ export const config = {
         SENDGRID_APIKEY : process.env.SENDGRID_API_KEY,
         SENDGRID_SENDER_EMAIL : process.env.SENDER_EMAIL
     },
+
+    google: {
+        CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
+    },
 };
