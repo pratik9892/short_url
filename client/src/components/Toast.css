@@ -1,22 +1,23 @@
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 1.5rem;
+  bottom: 1.25rem;
   transform: translateX(-50%);
-  z-index: 50;
+  z-index: 100;
   background: var(--ink);
   color: #fff;
-  padding: 0.75rem 1.1rem;
-  border-radius: 999px;
-  font-size: 0.92rem;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
   font-weight: 500;
-  animation: fadeUp 0.25s ease both;
-  max-width: min(90vw, 420px);
+  animation: toastIn 0.35s var(--ease-out) both;
+  max-width: min(90vw, 380px);
   text-align: center;
+  box-shadow: var(--shadow-soft);
 }
 
 .toast-success {
-  background: var(--accent-ink);
+  background: var(--success);
 }
 
 .toast-error {

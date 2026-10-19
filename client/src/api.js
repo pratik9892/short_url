@@ -77,6 +77,12 @@ export const api = {
 
   me: () => request('/auth/user'),
 
+  updateProfile: (body) =>
+    request('/auth/user/update', { method: 'PATCH', body }),
+
+  updatePassword: (body) =>
+    request('/auth/user/updatepassword', { method: 'PATCH', body }),
+
   createLink: (linkName, longUrl) =>
     request('/link/create', {
       method: 'POST',

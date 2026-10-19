@@ -11,6 +11,7 @@ import {
 } from "./user.contoller.js";
 import { verifyJWT } from "../../middleware/auth.middleware.js";
 import { validateBody } from "../../middleware/validate.middleware.js";
+import { authRateLimit } from "../../middleware/rateLimit.middleware.js";
 import {
   googleBodySchema,
   loginBodySchema,
@@ -19,9 +20,19 @@ import {
 
 const userRouter = Router();
 
-userRouter.post("/login", validateBody(loginBodySchema), login);
-userRouter.post("/google", validateBody(googleBodySchema), googleLogin);
-userRouter.post("/register", validateBody(registerBodySchema), register);
+userRouter.post("/login", authRateLimit, validateBody(loginBodySchema), login);
+userRouter.post(
+  "/google",
+  authRateLimit,
+  validateBody(googleBodySchema),
+  googleLogin
+);
+userRouter.post(
+  "/register",
+  authRateLimit,
+  validateBody(registerBodySchema),
+  register
+);
 userRouter.get("/refresh-token", refreshAccessToken);
 
 // secured routes
