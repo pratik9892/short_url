@@ -8,6 +8,7 @@ import {
 } from "./link.contoller.js";
 import { verifyJWT } from "../../middleware/auth.middleware.js";
 import { validateBody } from "../../middleware/validate.middleware.js";
+import { createLinkRateLimit } from "../../middleware/rateLimit.middleware.js";
 import { createLinkBodySchema } from "./link.validation.js";
 
 const linkRouter = Router();
@@ -16,6 +17,7 @@ const linkRouter = Router();
 linkRouter.post(
   "/create",
   verifyJWT,
+  createLinkRateLimit,
   validateBody(createLinkBodySchema),
   createShortUrl
 );

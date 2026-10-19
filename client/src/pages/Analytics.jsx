@@ -3,6 +3,10 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { api, shortUrlFor } from '../api'
 import { useAuth } from '../hooks/useAuth'
 import { useToast } from '../components/Toast'
+import Card from '../components/ui/Card'
+import StatCard from '../components/ui/StatCard'
+import PageHeader from '../components/ui/PageHeader'
+import CollapsibleText from '../components/ui/CollapsibleText'
 import './Analytics.css'
 
 function buildDaySeries(rows) {
@@ -95,14 +99,7 @@ export default function Analytics() {
     }
   }, [rows])
 
-  if (authLoading) {
-    return (
-      <main className="container analytics-page">
-        <p className="muted">Loading…</p>
-      </main>
-    )
-  }
-
+  if (authLoading) return <p className="muted analytics-loading">Loading…</p>
   if (!isAuthenticated) return <Navigate to="/login" replace />
 
   const maxDay = Math.max(1, ...stats.days.map((d) => d.count))
@@ -123,69 +120,69 @@ export default function Analytics() {
     }
   }
 
-  return (
-    <main className="container analytics-page fade-up">
-      <Link to="/dashboard" className="back-link muted">
-        ← Back to dashboard
-      </Link>
+  const summaryText = ai?.summary?.summary || ''
+  const personaText = ai?.persona?.persona || ''
 
-      <header className="analytics-header">
-        <h1>{link?.linkName || 'Link analytics'}</h1>
-        {link && (
-          <p className="muted">
-            <a href={shortUrlFor(link.shortCode)} target="_blank" rel="noreferrer">
-              {shortUrlFor(link.shortCode)}
-            </a>
-          </p>
-        )}
-      </header>
+  return (
+    <div className="analytics fade-up">
+      <Link to="/dashboard" className="analytics-back">← Dashboard</Link>
+
+      <PageHeader
+        title={link?.linkName || 'Link analytics'}
+        subtitle={
+          link
+            ? shortUrlFor(link.shortCode)
+            : 'Performance for this short URL'
+        }
+      />
 
       {loading && <p className="muted">Loading analytics…</p>}
 
       {!loading && (
-        <>
-          <section className="stat-grid">
-            <div className="stat"><span>Clicks</span><strong>{stats.clicks}</strong></div>
-            <div className="stat"><span>Countries</span><strong>{stats.countries}</strong></div>
-            <div className="stat"><span>Mobile</span><strong>{stats.devices.mobile}</strong></div>
-            <div className="stat"><span>Desktop</span><strong>{stats.devices.desktop}</strong></div>
-            <div className="stat"><span>Top browser</span><strong>{stats.topBrowser}</strong></div>
-            <div className="stat"><span>Top referrer</span><strong>{stats.topRef}</strong></div>
+        <div className="analytics-grid">
+          <section className="analytics-stats">
+            <StatCard label="Clicks" value={stats.clicks} />
+            <StatCard label="Countries" value={stats.countries} />
+            <StatCard label="Mobile" value={stats.devices.mobile} />
+            <StatCard label="Desktop" value={stats.devices.desktop} />
+            <StatCard label="Top browser" value={stats.topBrowser} />
+            <StatCard label="Top referrer" value={stats.topRef} />
           </section>
 
-          <section className="card ai-block">
-            <h2>AI summary</h2>
-            <p>{ai?.summary?.summary || 'No summary yet.'}</p>
-            {ai?.persona?.persona && (
-              <>
-                <h3>Audience</h3>
-                <p>{ai.persona.persona}</p>
-              </>
+          <Card title="AI summary" className="analytics-ai">
+            {summaryText ? (
+              <CollapsibleText text={summaryText} collapsedLines={4} maxHeight="6rem" />
+            ) : (
+              <p className="ui-panel__placeholder">No summary yet.</p>
             )}
-          </section>
+            {personaText && (
+              <div className="analytics-persona">
+                <h3>Audience</h3>
+                <CollapsibleText text={personaText} collapsedLines={3} maxHeight="5rem" />
+              </div>
+            )}
+          </Card>
 
-          <section className="card">
-            <h2>Clicks · last 14 days</h2>
-            <div className="bars" role="img" aria-label="Click chart for the last 14 days">
+          <Card title="Clicks · last 14 days" className="analytics-chart">
+            <div className="bars" role="img" aria-label="Click chart">
               {stats.days.map((d) => (
                 <div className="bar-col" key={d.label}>
                   <div
                     className="bar"
-                    style={{ height: `${Math.max(4, (d.count / maxDay) * 100)}%` }}
+                    style={{ height: `${Math.max(6, (d.count / maxDay) * 100)}%` }}
                     title={`${d.label}: ${d.count}`}
                   />
                   <span>{d.label}</span>
                 </div>
               ))}
             </div>
-          </section>
+          </Card>
 
           {Array.isArray(ai?.forecast?.forecast) && (
-            <section className="card">
-              <h2>7-day forecast</h2>
-              <p className="muted">
+            <Card title="7-day forecast" className="analytics-forecast">
+              <p className="muted forecast-total">
                 Projected total:{' '}
-                {ai.forecast.forecast.reduce((a, b) => a + Number(b || 0), 0)} clicks
+                <strong>{ai.forecast.forecast.reduce((a, b) => a + Number(b || 0), 0)}</strong> clicks
               </p>
               <div className="forecast-row">
                 {ai.forecast.forecast.map((n, i) => (
@@ -195,21 +192,24 @@ export default function Analytics() {
                   </div>
                 ))}
               </div>
-            </section>
+            </Card>
           )}
 
-          <section className="card">
-            <h2>Ask about this link</h2>
+          <Card title="Ask about this link">
             <form className="ask-form" onSubmit={onAsk}>
               <input name="question" maxLength={500} placeholder="Who is clicking this link?" />
               <button className="btn btn-primary btn-sm" type="submit" disabled={asking}>
                 {asking ? '…' : 'Ask AI'}
               </button>
             </form>
-            {askAnswer && <p className="ask-answer">{askAnswer}</p>}
-          </section>
-        </>
+            {askAnswer && (
+              <div className="analytics-ask-answer">
+                <CollapsibleText text={askAnswer} collapsedLines={4} maxHeight="6rem" />
+              </div>
+            )}
+          </Card>
+        </div>
       )}
-    </main>
+    </div>
   )
 }

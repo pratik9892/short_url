@@ -2,7 +2,10 @@
   min-height: calc(100vh - var(--nav-h));
   display: grid;
   align-items: center;
-  padding: 2rem 0 3rem;
+  padding: 2.5rem 0 4rem;
+  background:
+    radial-gradient(600px 280px at 100% 0%, var(--accent-soft), transparent 55%),
+    var(--bg);
 }
 
 .auth-wrap {

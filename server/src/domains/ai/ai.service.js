@@ -2,8 +2,11 @@ import { configDotenv } from "dotenv"
 configDotenv()
 
 const API_KEY = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY || ""
-const BASE_URL = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1"
-const MODEL = process.env.OPENAI_MODEL || process.env.GROQ_MODEL || "gpt-4o-mini"
+const BASE_URL = process.env.OPENAI_BASE_URL || process.env.GROQ_BASE_MODEL
+const MODEL =
+  process.env.OPENAI_MODEL ||
+  process.env.GROQ_MODEL ||
+  (process.env.GROQ_API_KEY ? "allam-2-7b" : "gpt-4o-mini")
 
 function hasLLM() {
   return Boolean(API_KEY && API_KEY.trim().length > 8)
@@ -31,7 +34,13 @@ async function chat(system, user, opts = {}) {
       },
       body: JSON.stringify(body),
     })
-    if (!res.ok) return ""
+    if (!res.ok) {
+      if (process.env.NODE_ENV !== "production") {
+        const errText = await res.text().catch(() => "")
+        console.warn("[AI] LLM request failed:", res.status, errText.slice(0, 300))
+      }
+      return ""
+    }
     const data = await res.json()
     return data?.choices?.[0]?.message?.content ?? ""
   } catch {

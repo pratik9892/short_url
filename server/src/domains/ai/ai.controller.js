@@ -2,7 +2,7 @@ import { StatusCodes } from "http-status-codes"
 import { AIService } from "./ai.service.js"
 import { LinkRepository } from "../link/link.repo.js"
 import { AnalyticsRepository } from "../analytics/analytics.repo.js"
-import { NotFound } from "../../errors/notFound.js"
+import { NotFound } from "../../errors/NotFound.js"
 
 const linkRepo = new LinkRepository()
 const analyticsRepo = new AnalyticsRepository()
