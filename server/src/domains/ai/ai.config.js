@@ -4,31 +4,67 @@ configDotenv()
 
 const GROQ_DEFAULT_BASE = "https://api.groq.com/openai/v1"
 
+/**
+ * Groq expects POST https://api.groq.com/openai/v1/chat/completions
+ * 404 often means OPENAI_BASE_URL already includes /chat/completions (doubled)
+ * or is https://api.groq.com without /openai/v1
+ */
+export function resolveGroqUrls(envBase = "") {
+  let raw = String(envBase || "").trim()
+  if (!raw) {
+    return { baseUrl: "", chatCompletionsUrl: "" }
+  }
+
+  raw = raw.replace(/\/+$/, "")
+
+  if (/\/chat\/completions$/i.test(raw)) {
+    const chatCompletionsUrl = raw
+    const baseUrl = raw.replace(/\/chat\/completions$/i, "")
+    return { baseUrl, chatCompletionsUrl }
+  }
+
+  let baseUrl = raw
+  if (/^https?:\/\/api\.groq\.com$/i.test(baseUrl)) {
+    baseUrl = GROQ_DEFAULT_BASE
+  } else if (/groq\.com/i.test(baseUrl) && !/\/openai\/v1/i.test(baseUrl)) {
+    baseUrl = `${baseUrl}/openai/v1`
+  }
+
+  baseUrl = baseUrl.replace(/\/+$/, "")
+  const chatCompletionsUrl = `${baseUrl}/chat/completions`
+  return { baseUrl, chatCompletionsUrl }
+}
+
 export function getAIConfig() {
   const apiKey = (process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || "").trim()
-  let baseUrl = (
+  const envBase =
     process.env.OPENAI_BASE_URL ||
     process.env.GROQ_BASE_URL ||
     ""
-  )
-    .trim()
-    .replace(/\/+$/, "")
 
-  if (!baseUrl && process.env.GROQ_API_KEY) {
-    baseUrl = GROQ_DEFAULT_BASE
+  let { baseUrl, chatCompletionsUrl } = resolveGroqUrls(envBase)
+
+  if (!baseUrl && apiKey && process.env.GROQ_API_KEY) {
+    const resolved = resolveGroqUrls(GROQ_DEFAULT_BASE)
+    baseUrl = resolved.baseUrl
+    chatCompletionsUrl = resolved.chatCompletionsUrl
   }
 
   const model =
     process.env.GROQ_MODEL ||
     process.env.OPENAI_MODEL ||
-    (process.env.GROQ_API_KEY ? "allam-2-7b" : "gpt-4o-mini")
+    (process.env.GROQ_API_KEY ? "llama-3.1-8b-instant" : "gpt-4o-mini")
 
   return {
     apiKey,
     baseUrl,
     model,
-    chatCompletionsUrl: baseUrl ? `${baseUrl}/chat/completions` : "",
-    keySource: process.env.GROQ_API_KEY ? "GROQ_API_KEY" : process.env.OPENAI_API_KEY ? "OPENAI_API_KEY" : null,
+    chatCompletionsUrl,
+    keySource: process.env.GROQ_API_KEY
+      ? "GROQ_API_KEY"
+      : process.env.OPENAI_API_KEY
+        ? "OPENAI_API_KEY"
+        : null,
   }
 }
 
@@ -39,7 +75,7 @@ export function logAIConfig() {
     api_key_present: Boolean(c.apiKey),
     api_key_length: c.apiKey.length,
     api_key_source: c.keySource,
-    base_url: c.baseUrl || "(missing — set OPENAI_BASE_URL or GROQ_BASE_URL)",
+    base_url: c.baseUrl || "(missing — set OPENAI_BASE_URL=https://api.groq.com/openai/v1)",
     model: c.model,
     chat_completions_url: c.chatCompletionsUrl || "(missing)",
   })

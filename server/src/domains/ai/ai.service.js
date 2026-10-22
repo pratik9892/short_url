@@ -66,6 +66,11 @@ async function chat(system, user, opts = {}) {
     })
     throw new badRequest(`Groq API HTTP ${res.status}`, {
       status: res.status,
+      requested_url: c.chatCompletionsUrl,
+      hint:
+        res.status === 404
+          ? "Use OPENAI_BASE_URL=https://api.groq.com/openai/v1 (no /chat/completions suffix)"
+          : undefined,
       body: rawText.slice(0, 500),
     })
   }
