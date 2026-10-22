@@ -10,6 +10,11 @@ export const config = {
         NODE_ENV: process.env.NODE_ENV || 'development',
     },
 
+    client: {
+        /** Frontend URL for CORS in production (comma-separated for multiple origins) */
+        ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    },
+
      // Database
     db: {
         MONGO_URI: process.env.MONGO_URI,

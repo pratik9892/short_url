@@ -1,6 +1,7 @@
 import express from "express"
 import { apiRouter } from "./routes/index.js"
 import { config } from "./config/server.config.js"
+import { getCorsOptions } from "./config/cors.config.js"
 import { errHandler } from "./utils/error.util.js"
 import { connectToDB } from "./config/mongodb.config.js"
 import cors from "cors"
@@ -12,12 +13,7 @@ configDotenv()
 const app = express()
 app.set("trust proxy", 1)
 
-app.use(
-  cors({
-    credentials: true,
-    origin: true,
-  })
-)
+app.use(cors(getCorsOptions()))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
