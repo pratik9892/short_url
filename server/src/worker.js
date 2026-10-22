@@ -9,7 +9,11 @@ configDotenv();
 
 async function startWorker() {
   console.log(`Background Worker Process Started.`);
-  console.log(`Redis Host: ${appConfig.redis.HOST}:${appConfig.redis.PORT}`);
+  if (appConfig.redis.URL?.trim()) {
+    console.log("Redis: using REDIS_URL (Upstash / cloud)")
+  } else {
+    console.log(`Redis Host: ${appConfig.redis.HOST}:${appConfig.redis.PORT}`)
+  }
   console.log("Listening for jobs on 'emailQueue' and 'analyticsQueue'...");
 
   await connectToDB();
