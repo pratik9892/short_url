@@ -3,14 +3,14 @@ import { createEmailWorker } from "./infrastructure/queue/emailQueue.js";
 import { createAnalyticsWorker } from "./infrastructure/queue/analyticsQueue.js";
 
 import { config as appConfig } from "./config/server.config.js";
-import { logRedisBootDiagnostics } from "./config/redis.config.js";
+import { logRedisConfig } from "./config/redis.config.js";
 import { connectToDB } from "./config/mongodb.config.js";
 
 configDotenv();
 
 async function startWorker() {
   console.log(`Background Worker Process Started.`);
-  logRedisBootDiagnostics();
+  logRedisConfig();
   console.log("Listening for jobs on 'emailQueue' and 'analyticsQueue'...");
 
   await connectToDB();

@@ -1,71 +1,46 @@
 import { config } from "./server.config.js"
 
-/**
- * BullMQ / ioredis connection.
- * Production (pick one):
- *   - REDIS_URL=rediss://default:password@host:6379
- *   - REDIS_HOST + REDIS_PORT + REDIS_PASSWORD + REDIS_TLS=true (Upstash)
- * Local: REDIS_HOST + REDIS_PORT (Docker)
- */
+/** See server/docs/redis-flow.md */
+function toUpstashTlsUrl(url) {
+  if (url.includes("upstash.io") && url.startsWith("redis://")) {
+    return url.replace("redis://", "rediss://")
+  }
+  return url
+}
+
 function buildRedisConnection() {
-  const rawUrl = config.redis.URL?.trim()
-  if (rawUrl) {
-    let url = rawUrl
-    if (url.includes("upstash.io") && url.startsWith("redis://")) {
-      url = url.replace("redis://", "rediss://")
-    }
-    return url
-  }
+  const url = config.redis.URL?.trim()
+  if (url) return toUpstashTlsUrl(url)
 
-  const connection = {
-    host: config.redis.HOST,
+  const host = config.redis.HOST
+  const needsTls = config.redis.TLS || host.includes("upstash.io")
+
+  return {
+    host,
     port: config.redis.PORT,
+    ...(config.redis.PASSWORD && { password: config.redis.PASSWORD }),
+    ...(needsTls && { tls: {} }),
   }
-
-  if (config.redis.PASSWORD) {
-    connection.password = config.redis.PASSWORD
-  }
-
-  const useTls =
-    config.redis.TLS ||
-    String(config.redis.HOST).includes("upstash.io")
-
-  if (useTls) {
-    connection.tls = {}
-  }
-
-  return connection
 }
 
 export const REDIS_CONNECTION = buildRedisConnection()
 
-/** Safe startup log — no passwords. */
-export function logRedisBootDiagnostics() {
-  const hasUrl = Boolean(config.redis.URL?.trim())
-  const mode = typeof REDIS_CONNECTION === "string" ? "url" : "host-port"
+/** Logs whether REDIS_URL was loaded (no secrets). */
+export function logRedisConfig() {
+  const url = config.redis.URL?.trim()
+  const usingUrl = Boolean(url)
 
-  const info = {
-    mode,
-    hasRedisUrlEnv: hasUrl,
-    redisUrlEnvLength: config.redis.URL?.length ?? 0,
-  }
+  console.log("[redis] config", {
+    REDIS_URL_present: usingUrl,
+    REDIS_URL_length: url?.length ?? 0,
+    connection: usingUrl ? "url" : "host+port",
+    host: usingUrl ? "(from URL)" : config.redis.HOST,
+    port: usingUrl ? "(from URL)" : config.redis.PORT,
+  })
 
-  if (mode === "host-port") {
-    info.host = REDIS_CONNECTION.host
-    info.port = REDIS_CONNECTION.port
-    info.tls = Boolean(REDIS_CONNECTION.tls)
-    info.hasPassword = Boolean(REDIS_CONNECTION.password)
-  } else {
-    info.hostHint = config.redis.URL.includes("@")
-      ? config.redis.URL.split("@").pop()?.split(":")[0]
-      : "(parse failed)"
-  }
-
-  if (!hasUrl && info.host === "127.0.0.1") {
+  if (!usingUrl && config.redis.HOST === "127.0.0.1") {
     console.warn(
-      "[redis] REDIS_URL is not set — using localhost. On Render, set REDIS_URL or REDIS_HOST/PORT/PASSWORD."
+      "[redis] No REDIS_URL — defaulting to localhost. Set REDIS_URL on Render."
     )
   }
-
-  console.log("[redis] boot", info)
 }
