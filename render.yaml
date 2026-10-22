@@ -1,0 +1,12 @@
+# Render Blueprint — API only (add worker as a second service in Step 4)
+services:
+  - type: web
+    name: shortly-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
