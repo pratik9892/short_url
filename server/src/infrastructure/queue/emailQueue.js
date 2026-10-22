@@ -1,5 +1,5 @@
 import { Queue, Worker, Job } from "bullmq";
-import { REDIS_CONNECTION } from "../../config/redis.config.js";
+import { REDIS_CONNECTION, redisDuplicate } from "../../config/redis.config.js";
 import { sendWelcomeEmail } from "../utils/email.utils.js";
 import { ConflictError } from "../../errors/conflictError.js";
 
@@ -34,7 +34,7 @@ export function createEmailWorker() {
 
       return result;
     },
-    { connection: REDIS_CONNECTION }
+    { connection: redisDuplicate() }
   );
 
   emailWorker.on("completed", (job) => {

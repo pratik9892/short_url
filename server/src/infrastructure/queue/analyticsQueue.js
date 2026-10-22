@@ -1,5 +1,5 @@
 import { Queue, Worker } from "bullmq";
-import { REDIS_CONNECTION } from "../../config/redis.config.js";
+import { REDIS_CONNECTION, redisDuplicate } from "../../config/redis.config.js";
 import { AnalyticsService } from "../../domains/analytics/analytics.service.js";
 import { AnalyticsRepository } from "../../domains/analytics/analytics.repo.js";
 import { getGeoFromIp } from "../utils/geoip.util.js";
@@ -37,7 +37,7 @@ export function createAnalyticsWorker() {
         city: geo.city,
       });
     },
-    { connection: REDIS_CONNECTION }
+    { connection: redisDuplicate() }
   );
 
   analyticsWorker.on("completed", (job) => {
