@@ -1,4 +1,4 @@
-import { NotFound } from "../../errors/NotFound.js";
+import { NotFound } from "../../errors/notFound.js";
 import { User } from "./user.model.js";
 
 export class UserRepository {
