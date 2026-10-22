@@ -70,10 +70,28 @@ export function getAIConfig() {
     chatCompletionsUrl = resolved.chatCompletionsUrl
   }
 
-  const model =
-    process.env.GROQ_MODEL ||
-    process.env.OPENAI_MODEL ||
-    (process.env.GROQ_API_KEY ? "llama-3.1-8b-instant" : "gpt-4o-mini")
+  const rawModel = cleanEnv(
+    process.env.GROQ_MODEL || process.env.OPENAI_MODEL || ""
+  )
+  const defaultGroqModel = "openai/gpt-oss-20b"
+  const deprecatedModelMap = {
+    "llama-3.1-8b-instant": defaultGroqModel,
+    "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
+    "allam-2-7b": defaultGroqModel,
+  }
+  let model =
+    rawModel ||
+    (process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY
+      ? defaultGroqModel
+      : "gpt-4o-mini")
+  if (deprecatedModelMap[model]) {
+    const replacement = deprecatedModelMap[model]
+    console.warn("[ai] deprecated GROQ_MODEL; using replacement", {
+      was: model,
+      now: replacement,
+    })
+    model = replacement
+  }
 
   return {
     apiKey,
