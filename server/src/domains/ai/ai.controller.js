@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes"
 import { AIService } from "./ai.service.js"
-import { getProviderInfo, probeGroqConnection } from "./ai.config.js"
+import { getAIConfig, getProviderInfo, probeGroqConnection } from "./ai.config.js"
 import { LinkRepository } from "../link/link.repo.js"
 import { AnalyticsRepository } from "../analytics/analytics.repo.js"
 import { NotFound } from "../../errors/notFound.js"
@@ -10,7 +10,15 @@ const analyticsRepo = new AnalyticsRepository()
 
 async function postDashboardInsight(req, res, next) {
   try {
+    const ai = getAIConfig()
     const links = await linkRepo.getAllShortUrls(req.user._id)
+    console.log("[ai] generate insight clicked", {
+      api_route: `${req.method} ${req.originalUrl}`,
+      groq_url: ai.chatCompletionsUrl,
+      groq_model: ai.model,
+      api_key_present: Boolean(ai.apiKey),
+      link_count: links.length,
+    })
     const result = await AIService.dashboardInsight(req.user._id, links)
     return res.status(StatusCodes.OK).json({
       success: true,
