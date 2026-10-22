@@ -8,7 +8,8 @@
     "test:watch": "vitest",
     "dev": "nodemon src/app.js",
     "start": "node src/app.js",
-    "worker": "node src/worker.js"
+    "worker": "node src/worker.js",
+    "start:with-worker": "concurrently -n api,worker -c blue,green \"node src/app.js\" \"node src/worker.js\""
   },
   "keywords": [],
   "author": "",
@@ -19,6 +20,7 @@
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "bullmq": "^5.63.0",
+    "concurrently": "^9.2.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
