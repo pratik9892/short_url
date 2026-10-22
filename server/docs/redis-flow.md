@@ -5,8 +5,9 @@ Redis is only used for **BullMQ job queues** (not link storage).
 ```mermaid
 flowchart LR
   ENV["Render env\nREDIS_URL"] --> CFG["redis.config.js\nREDIS_CONNECTION"]
-  CFG --> Q1["emailQueue.js"]
-  CFG --> Q2["analyticsQueue.js"]
+  CFG --> IO["ioredis client\n(not a raw URL string)"]
+  IO --> Q1["emailQueue.js"]
+  IO --> Q2["analyticsQueue.js"]
   Q1 --> API["API\nuser.service"]
   Q2 --> API2["API\nlink.controller"]
   Q1 --> W["worker.js"]
