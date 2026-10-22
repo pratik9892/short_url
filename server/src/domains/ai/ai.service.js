@@ -59,20 +59,36 @@ async function chat(system, user, opts = {}) {
   }
 
   if (!res.ok) {
+    let groqError = null
+    try {
+      groqError = JSON.parse(rawText)?.error
+    } catch {
+      groqError = null
+    }
     console.error("[ai] groq http error", {
       status: res.status,
       statusText: res.statusText,
+      url: c.chatCompletionsUrl,
+      model: c.model,
+      groq_error: groqError,
       body: rawText.slice(0, 1000),
     })
-    throw new badRequest(`Groq API HTTP ${res.status}`, {
-      status: res.status,
-      requested_url: c.chatCompletionsUrl,
-      hint:
-        res.status === 404
-          ? "Use OPENAI_BASE_URL=https://api.groq.com/openai/v1 (no /chat/completions suffix)"
-          : undefined,
-      body: rawText.slice(0, 500),
-    })
+    throw new badRequest(
+      groqError?.message || `Groq API HTTP ${res.status}`,
+      {
+        status: res.status,
+        requested_url: c.chatCompletionsUrl,
+        model: c.model,
+        groq_code: groqError?.code,
+        hint:
+          res.status === 404
+            ? "Groq 404 = wrong path. Expected https://api.groq.com/openai/v1/chat/completions — redeploy latest server or remove a bad OPENAI_BASE_URL."
+            : res.status === 401
+              ? "Invalid GROQ_API_KEY on Render"
+              : undefined,
+        body: rawText.slice(0, 500),
+      }
+    )
   }
 
   let data

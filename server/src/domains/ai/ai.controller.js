@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes"
 import { AIService } from "./ai.service.js"
-import { getProviderInfo } from "./ai.config.js"
+import { getProviderInfo, probeGroqConnection } from "./ai.config.js"
 import { LinkRepository } from "../link/link.repo.js"
 import { AnalyticsRepository } from "../analytics/analytics.repo.js"
 import { NotFound } from "../../errors/notFound.js"
@@ -75,11 +75,15 @@ async function getLinkAIAnalytics(req, res, next) {
 
 async function getAIStatus(req, res, next) {
   try {
+    const data = getProviderInfo()
+    if (req.query.test === "1" || req.query.test === "true") {
+      data.probe = await probeGroqConnection()
+    }
     return res.status(StatusCodes.OK).json({
       success: true,
       message: "AI provider status",
       error: {},
-      data: getProviderInfo(),
+      data,
     })
   } catch (err) {
     next(err)

@@ -3,6 +3,14 @@ import { configDotenv } from "dotenv"
 configDotenv()
 
 const GROQ_DEFAULT_BASE = "https://api.groq.com/openai/v1"
+const GROQ_CHAT_URL = `${GROQ_DEFAULT_BASE}/chat/completions`
+
+function cleanEnv(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\r/g, "")
+    .replace(/^['"]|['"]$/g, "")
+}
 
 /**
  * Groq expects POST https://api.groq.com/openai/v1/chat/completions
@@ -36,15 +44,27 @@ export function resolveGroqUrls(envBase = "") {
 }
 
 export function getAIConfig() {
-  const apiKey = (process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || "").trim()
-  const envBase =
-    process.env.OPENAI_BASE_URL ||
-    process.env.GROQ_BASE_URL ||
-    ""
+  const apiKey = cleanEnv(process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY)
+  const envBase = cleanEnv(
+    process.env.OPENAI_BASE_URL || process.env.GROQ_BASE_URL || ""
+  )
 
   let { baseUrl, chatCompletionsUrl } = resolveGroqUrls(envBase)
 
-  if (!baseUrl && apiKey && process.env.GROQ_API_KEY) {
+  const usingGroqKey = Boolean(cleanEnv(process.env.GROQ_API_KEY))
+  if (!baseUrl && usingGroqKey) {
+    const resolved = resolveGroqUrls(GROQ_DEFAULT_BASE)
+    baseUrl = resolved.baseUrl
+    chatCompletionsUrl = resolved.chatCompletionsUrl
+  }
+
+  // If Groq key is set but env base still resolves to a bad path, force the known-good URL
+  if (usingGroqKey && chatCompletionsUrl !== GROQ_CHAT_URL) {
+    console.warn("[ai] GROQ_API_KEY set but chat URL looks wrong; using default Groq endpoint", {
+      env_base: envBase || "(empty)",
+      resolved: chatCompletionsUrl,
+      using: GROQ_CHAT_URL,
+    })
     const resolved = resolveGroqUrls(GROQ_DEFAULT_BASE)
     baseUrl = resolved.baseUrl
     chatCompletionsUrl = resolved.chatCompletionsUrl
@@ -88,9 +108,67 @@ export function getProviderInfo() {
     model: c.model,
     baseUrl: c.baseUrl || null,
     chatCompletionsUrl: c.chatCompletionsUrl || null,
+    expectedGroqChatUrl: GROQ_CHAT_URL,
+    chatUrlMatchesGroqDefault: c.chatCompletionsUrl === GROQ_CHAT_URL,
     apiKeyPresent: Boolean(c.apiKey),
     apiKeyLength: c.apiKey.length,
     apiKeySource: c.keySource,
     mode: "llm",
+  }
+}
+
+/** One minimal Groq call to verify key, model, and URL (for debugging). */
+export async function probeGroqConnection() {
+  const c = getAIConfig()
+  if (!c.apiKey || c.apiKey.length < 8) {
+    return { ok: false, step: "config", error: "Missing or short API key" }
+  }
+  if (!c.chatCompletionsUrl) {
+    return { ok: false, step: "config", error: "Missing chat completions URL" }
+  }
+
+  const body = {
+    model: c.model,
+    max_tokens: 8,
+    messages: [{ role: "user", content: "Reply with OK" }],
+  }
+
+  let res
+  let rawText = ""
+  try {
+    res = await fetch(c.chatCompletionsUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${c.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    })
+    rawText = await res.text()
+  } catch (err) {
+    return {
+      ok: false,
+      step: "network",
+      url: c.chatCompletionsUrl,
+      model: c.model,
+      error: err?.message || String(err),
+    }
+  }
+
+  let parsed = null
+  try {
+    parsed = JSON.parse(rawText)
+  } catch {
+    parsed = { raw: rawText.slice(0, 300) }
+  }
+
+  return {
+    ok: res.ok,
+    httpStatus: res.status,
+    url: c.chatCompletionsUrl,
+    model: c.model,
+    groq_error: parsed?.error || null,
+    usage: parsed?.usage || null,
+    content_preview: parsed?.choices?.[0]?.message?.content?.slice(0, 80) || null,
   }
 }
