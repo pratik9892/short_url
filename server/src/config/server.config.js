@@ -29,10 +29,12 @@ export const config = {
         REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || '4d',
     },
 
-    // // Redis Caching
     redis: {
-        HOST: process.env.REDIS_HOST || '127.0.0.1',
-        PORT: parseInt(process.env.REDIS_PORT) || 6379,
+        URL: process.env.REDIS_URL || "",
+        HOST: process.env.REDIS_HOST || "127.0.0.1",
+        PORT: parseInt(process.env.REDIS_PORT, 10) || 6379,
+        PASSWORD: process.env.REDIS_PASSWORD || "",
+        TLS: process.env.REDIS_TLS === "true",
     },
 
     email : {
