@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { NotFound } from "../../errors/NotFound.js";
+import { NotFound } from "../../errors/notFound.js";
 import { Link } from "./link.model.js";
 
 export class LinkRepository {

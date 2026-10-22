@@ -1,5 +1,5 @@
 import { ConflictError } from "../../errors/conflictError.js";
-import { NotFound } from "../../errors/NotFound.js";
+import { NotFound } from "../../errors/notFound.js";
 import { UnauthorizedError } from "../../errors/unauthorizedError.js";
 import { emailQueue } from "../../infrastructure/queue/emailQueue.js";
 import {

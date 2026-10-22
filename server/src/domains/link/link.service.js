@@ -1,6 +1,6 @@
 import { ConflictError } from "../../errors/conflictError.js";
 import { InternalServerError } from "../../errors/internalServerError.js";
-import { NotFound } from "../../errors/NotFound.js";
+import { NotFound } from "../../errors/notFound.js";
 import { generateShortCode } from "../../utils/shortCode.util.js";
 import { AnalyticsRepository } from "../analytics/analytics.repo.js";
 import { AnalyticsService } from "../analytics/analytics.service.js";
