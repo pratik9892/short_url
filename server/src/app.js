@@ -3,6 +3,7 @@ import { apiRouter } from "./routes/index.js"
 import { config } from "./config/server.config.js"
 import { getCorsOptions } from "./config/cors.config.js"
 import { logRedisConfig } from "./config/redis.config.js"
+import { logAIConfig } from "./domains/ai/ai.config.js"
 import { errHandler } from "./utils/error.util.js"
 import { connectToDB } from "./config/mongodb.config.js"
 import cors from "cors"
@@ -38,6 +39,7 @@ app.get("/:shortCode", (req, res, next) => {
 app.use(errHandler)
 
 app.listen(config.server.PORT, async () => {
+  logAIConfig()
   logRedisConfig()
   console.log("Server is runnig on port " + config.server.PORT)
   await connectToDB()

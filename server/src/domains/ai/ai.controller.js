@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes"
 import { AIService } from "./ai.service.js"
+import { getProviderInfo } from "./ai.config.js"
 import { LinkRepository } from "../link/link.repo.js"
 import { AnalyticsRepository } from "../analytics/analytics.repo.js"
 import { NotFound } from "../../errors/notFound.js"
@@ -78,7 +79,7 @@ async function getAIStatus(req, res, next) {
       success: true,
       message: "AI provider status",
       error: {},
-      data: AIService.getProviderInfo(),
+      data: getProviderInfo(),
     })
   } catch (err) {
     next(err)

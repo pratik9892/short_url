@@ -1,51 +1,103 @@
-import { configDotenv } from "dotenv"
-configDotenv()
+import { badRequest } from "../../errors/badRequest.js"
+import { getAIConfig } from "./ai.config.js"
 
-const API_KEY = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY || ""
-const BASE_URL = process.env.OPENAI_BASE_URL || process.env.GROQ_BASE_MODEL
-const MODEL =
-  process.env.OPENAI_MODEL ||
-  process.env.GROQ_MODEL ||
-  (process.env.GROQ_API_KEY ? "allam-2-7b" : "gpt-4o-mini")
-
-function hasLLM() {
-  return Boolean(API_KEY && API_KEY.trim().length > 8)
+function requireAIConfig() {
+  const c = getAIConfig()
+  if (!c.apiKey || c.apiKey.length < 8) {
+    throw new badRequest("AI API key", {
+      hint: "Set GROQ_API_KEY (or OPENAI_API_KEY) on the server",
+      api_key_present: Boolean(c.apiKey),
+      api_key_length: c.apiKey.length,
+    })
+  }
+  if (!c.baseUrl || !c.chatCompletionsUrl) {
+    throw new badRequest("AI base URL", {
+      hint: "Set OPENAI_BASE_URL=https://api.groq.com/openai/v1 for Groq",
+      base_url: c.baseUrl || null,
+    })
+  }
+  return c
 }
 
 async function chat(system, user, opts = {}) {
-  if (!hasLLM()) return ""
-  try {
-    const body = {
-      model: MODEL,
-      temperature: opts.temperature ?? 0.2,
-      max_tokens: opts.max_tokens ?? 700,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }
-    if (opts.response_format) body.response_format = opts.response_format
+  const c = requireAIConfig()
+  const body = {
+    model: c.model,
+    temperature: opts.temperature ?? 0.2,
+    max_tokens: opts.max_tokens ?? 700,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  }
+  if (opts.response_format) body.response_format = opts.response_format
 
-    const res = await fetch(`${BASE_URL}/chat/completions`, {
+  console.log("[ai] groq request", {
+    url: c.chatCompletionsUrl,
+    model: c.model,
+    system_chars: system.length,
+    user_chars: user.length,
+  })
+
+  let res
+  let rawText = ""
+  try {
+    res = await fetch(c.chatCompletionsUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${API_KEY}`,
+        Authorization: `Bearer ${c.apiKey}`,
       },
       body: JSON.stringify(body),
     })
-    if (!res.ok) {
-      if (process.env.NODE_ENV !== "production") {
-        const errText = await res.text().catch(() => "")
-        console.warn("[AI] LLM request failed:", res.status, errText.slice(0, 300))
-      }
-      return ""
-    }
-    const data = await res.json()
-    return data?.choices?.[0]?.message?.content ?? ""
-  } catch {
-    return ""
+    rawText = await res.text()
+  } catch (err) {
+    console.error("[ai] groq network error", err?.message || err)
+    throw new badRequest("Groq request failed", {
+      reason: err?.message || "network error",
+    })
   }
+
+  if (!res.ok) {
+    console.error("[ai] groq http error", {
+      status: res.status,
+      statusText: res.statusText,
+      body: rawText.slice(0, 1000),
+    })
+    throw new badRequest(`Groq API HTTP ${res.status}`, {
+      status: res.status,
+      body: rawText.slice(0, 500),
+    })
+  }
+
+  let data
+  try {
+    data = JSON.parse(rawText)
+  } catch {
+    console.error("[ai] groq invalid json", rawText.slice(0, 300))
+    throw new badRequest("Groq API invalid JSON", { body: rawText.slice(0, 300) })
+  }
+
+  const choice = data?.choices?.[0]
+  const content = choice?.message?.content ?? ""
+
+  console.log("[ai] groq response", {
+    id: data.id,
+    model: data.model,
+    usage: data.usage,
+    finish_reason: choice?.finish_reason,
+    content_preview: content.slice(0, 120),
+    content_length: content.length,
+  })
+
+  if (!String(content).trim()) {
+    throw new badRequest("Groq API empty completion", {
+      finish_reason: choice?.finish_reason,
+      raw: data,
+    })
+  }
+
+  return String(content).trim()
 }
 
 function tryParseJSON(text) {
@@ -138,28 +190,9 @@ function aggregateStats(rows = []) {
   }
 }
 
-function heuristicDashboardInsight(links = []) {
-  if (!links.length) return "No data yet. Shorten a few links and try again."
-  const total = links.length
-  const visits = links.reduce((s, l) => s + Number(l.visits || 0), 0)
-  const byVisits = [...links].sort((a, b) => (b.visits || 0) - (a.visits || 0))
-  const top = byVisits[0]
-  const avg = visits / total
-  const pieces = [
-    `You've created ${total} short links with ${visits} total visits (avg ${avg.toFixed(1)} clicks/link).`,
-  ]
-  if (top && top.visits > 0) {
-    pieces.push(
-      `"${top.linkName || top.shortCode}" leads with ${top.visits} clicks — share more like it.`
-    )
-  }
-  return pieces.join(" ")
-}
-
-async function dashboardInsight(userId, links = []) {
-  const fallback = heuristicDashboardInsight(links)
-  if (!hasLLM() || !links.length) {
-    return { insight: fallback, provider: "heuristic" }
+async function dashboardInsight(_userId, links = []) {
+  if (!links.length) {
+    throw new badRequest("links", { hint: "Create at least one short link first" })
   }
   const compact = links.map((l) => ({
     name: l.linkName || "Untitled",
@@ -167,165 +200,84 @@ async function dashboardInsight(userId, links = []) {
     host: safeHost(l.longUrl),
     visits: Number(l.visits || 0),
   }))
-  const text = await chat(
+  const insight = await chat(
     "You are a concise growth marketer. One short paragraph (max 100 words) about this short-link portfolio. Include numbers and one action.",
     JSON.stringify(compact)
   )
-  return {
-    insight: text?.trim() || fallback,
-    provider: text?.trim() ? "llm" : "heuristic",
-  }
-}
-
-function heuristicNameFromUrl(longUrl) {
-  try {
-    const u = new URL(longUrl)
-    const host = u.hostname.replace(/^www\./, "")
-    const pathBits = u.pathname
-      .split("/")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((s) => s.replace(/[-_]+/g, " ").slice(0, 10))
-      .join(" · ")
-    return (pathBits ? `${host} · ${pathBits}` : host).slice(0, 20)
-  } catch {
-    return "My Link"
-  }
+  return { insight, provider: "llm" }
 }
 
 async function suggestLinkName(longUrl) {
-  const fallback = heuristicNameFromUrl(longUrl)
-  if (!hasLLM()) return { name: fallback, provider: "heuristic" }
   const text = await chat(
     "Suggest a SHORT label (max 20 chars) for this URL. Only the label, no quotes.",
     `Long URL: ${longUrl}`,
     { temperature: 0.5, max_tokens: 40 }
   )
-  const name = (text || "").trim().replace(/^["'`]|["'`]$/g, "").slice(0, 20) || fallback
-  return { name, provider: name !== fallback ? "llm" : "heuristic" }
-}
-
-function heuristicAnalyticsSummary(rows = [], extras = {}) {
-  const total = rows.length
-  if (!total) return "No clicks yet for this link. Share it to gather insights."
-  const pct = (n) => `${Math.round((n / total) * 100)}%`
-  const s = [`${total} clicks from ${extras.countriesSize || 0} countries.`]
-  if ((extras.devices?.mobile || 0) > (extras.devices?.desktop || 0)) {
-    s.push(`Mobile-first audience (${pct(extras.devices.mobile)}).`)
-  } else if ((extras.devices?.desktop || 0) > 0) {
-    s.push(`Desktop leads at ${pct(extras.devices.desktop)}.`)
-  }
-  if (extras.topBrowser) s.push(`${extras.topBrowser[0]} is the top browser.`)
-  if (extras.topRef) s.push(`${extras.topRef[0]} is the top referrer.`)
-  return s.join(" ")
+  const name = text.replace(/^["'`]|["'`]$/g, "").slice(0, 20)
+  return { name, provider: "llm" }
 }
 
 async function analyticsSummary(link, rows = []) {
   const stats = aggregateStats(rows)
-  const fallback = heuristicAnalyticsSummary(rows, stats)
-  if (!hasLLM() || !rows.length) return { summary: fallback, provider: "heuristic" }
-  const text = await chat(
-    "Write 2-3 sentences summarizing this link's click analytics. End with one recommendation. Max 90 words.",
-    `Link: ${link.linkName || link.shortCode}, clicks: ${rows.length}, devices: ${JSON.stringify(stats.devices)}, countries: ${stats.countriesSize}`
+  const summary = await chat(
+    "Write 2-3 sentences summarizing this link's click analytics. End with one recommendation. Max 90 words. If there are zero clicks, say so and suggest how to get traffic.",
+    `Link: ${link.linkName || link.shortCode}, clicks: ${rows.length}, devices: ${JSON.stringify(stats.devices)}, countries: ${stats.countriesSize}, top_countries: ${JSON.stringify(stats.countries)}`
   )
-  return {
-    summary: text?.trim() || fallback,
-    provider: text?.trim() ? "llm" : "heuristic",
-  }
-}
-
-function heuristicAnomalies(days = []) {
-  if (days.length < 5) return []
-  const mean = days.reduce((a, d) => a + d.count, 0) / days.length
-  if (mean < 1.5) return []
-  const spike = Math.max(4, mean * 2)
-  return days
-    .filter((d) => d.count >= spike)
-    .map((d) => ({
-      date: d.label,
-      count: d.count,
-      type: "spike",
-      severity: Math.round((d.count / mean) * 10) / 10,
-      reason: "Higher than your recent daily average.",
-    }))
-    .slice(0, 5)
+  return { summary, provider: "llm" }
 }
 
 async function detectAnomalies(link, rows = []) {
+  if (!rows.length) {
+    return { anomalies: [], provider: "llm" }
+  }
   const { days } = aggregateStats(rows)
-  return { anomalies: heuristicAnomalies(days), provider: "heuristic" }
-}
-
-function heuristicForecast(days = []) {
-  const counts = days.map((d) => d.count).slice(-7)
-  if (!counts.length) return Array.from({ length: 7 }, () => 0)
-  const avg = counts.reduce((a, b) => a + b, 0) / counts.length
-  return Array.from({ length: 7 }, () => Math.max(0, Math.round(avg)))
+  const text = await chat(
+    'Analyze daily click counts. Reply with JSON only: {"anomalies":[{"date":"M/D","count":number,"type":"spike","severity":number,"reason":"string"}]}. Use empty anomalies array if none.',
+    JSON.stringify({ link: link.linkName || link.shortCode, days }),
+    { max_tokens: 400 }
+  )
+  const parsed = tryParseJSON(text)
+  const anomalies = Array.isArray(parsed?.anomalies) ? parsed.anomalies : []
+  return { anomalies, provider: "llm" }
 }
 
 async function forecastClicks(link, rows = []) {
   const { days } = aggregateStats(rows)
-  return { forecast: heuristicForecast(days), provider: "heuristic" }
-}
-
-function heuristicPersona(rows = []) {
-  const { countriesSize, devices, topBrowser, topRef } = aggregateStats(rows)
-  if (!rows.length) return "No audience data yet."
-  const mobPct = Math.round(((devices.mobile || 0) / rows.length) * 100)
-  return `Primarily ${mobPct > 50 ? "mobile" : "desktop"} visitors from ${countriesSize || 1}+ regions, often via ${topBrowser ? topBrowser[0] : "a common browser"}, arriving from ${topRef ? topRef[0] : "direct access"}.`
+  const text = await chat(
+    'Predict clicks for the next 7 days from this history. Reply with JSON only: {"forecast":[7 numbers]}.',
+    JSON.stringify({ link: link.linkName || link.shortCode, days }),
+    { max_tokens: 120 }
+  )
+  const parsed = tryParseJSON(text)
+  let forecast = Array.isArray(parsed?.forecast) ? parsed.forecast.map((n) => Math.max(0, Math.round(Number(n) || 0))) : []
+  if (forecast.length !== 7) {
+    forecast = Array.from({ length: 7 }, () => 0)
+  }
+  return { forecast, provider: "llm" }
 }
 
 async function audiencePersona(link, rows = []) {
-  const fallback = heuristicPersona(rows)
-  if (!hasLLM() || rows.length < 5) return { persona: fallback, provider: "heuristic" }
   const stats = aggregateStats(rows)
-  const text = await chat(
-    "One short marketing persona paragraph (60-80 words) for typical visitors. No lists.",
-    JSON.stringify({ link: link.linkName, clicks: rows.length, stats })
+  const persona = await chat(
+    "One short marketing persona paragraph (60-80 words) for typical visitors. No lists. If there are few clicks, describe who you expect might click.",
+    JSON.stringify({ link: link.linkName || link.shortCode, clicks: rows.length, stats })
   )
-  return {
-    persona: text?.trim() || fallback,
-    provider: text?.trim() ? "llm" : "heuristic",
-  }
-}
-
-function getProviderInfo() {
-  return {
-    llmEnabled: hasLLM(),
-    model: hasLLM() ? MODEL : null,
-    mode: hasLLM() ? "llm" : "heuristic",
-  }
+  return { persona, provider: "llm" }
 }
 
 async function askQuestion(question, context = {}) {
   const trimmed = String(question || "").trim().slice(0, 500)
-  if (!trimmed) return { answer: "Please enter a question.", provider: "heuristic" }
-
-  const links = context.links || []
-  const visits = context.totalVisits || 0
-  let fallback =
-    links.length === 0
-      ? "You have no links yet. Create a short URL, then ask again."
-      : `You have ${links.length} links and ${visits} total visits.`
-
-  if (context.link) {
-    fallback = `"${context.link.linkName || context.link.shortCode}" has ${context.clickCount || 0} recorded clicks.`
+  if (!trimmed) {
+    throw new badRequest("question", { hint: "Question is required" })
   }
-
-  if (!hasLLM()) return { answer: fallback, provider: "heuristic" }
-  const text = await chat(
+  const answer = await chat(
     "You are Shortly, a concise analytics assistant. Answer using only the JSON context. Max 100 words.",
     `Question: ${trimmed}\nContext: ${JSON.stringify(context)}`
   )
-  return {
-    answer: text?.trim() || fallback,
-    provider: text?.trim() ? "llm" : "heuristic",
-  }
+  return { answer, provider: "llm" }
 }
 
 export const AIService = {
-  hasLLM,
-  getProviderInfo,
   dashboardInsight,
   suggestLinkName,
   analyticsSummary,
