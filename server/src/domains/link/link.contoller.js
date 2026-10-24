@@ -2,8 +2,9 @@ import { StatusCodes } from "http-status-codes"
 import { LinkRepository } from "./link.repo.js"
 import { LinkService } from "./link.service.js"
 import { analyticsQueue } from "../../infrastructure/queue/analyticsQueue.js"
+import { linkCache } from "../../infrastructure/cache/linkCache.js"
 
-const linkService = new LinkService(new LinkRepository)
+const linkService = new LinkService(new LinkRepository, linkCache)
 
 
 async function createShortUrl(req,res,next){
@@ -33,18 +34,19 @@ async function redirectToLongUrl(req,res,next){
 
         const link = await linkService.getLinkByShortCode(shortCode)
 
-        // fire-and-forget
-        try {
-            const ip =
-                (req.headers["x-forwarded-for"] &&
-                    req.headers["x-forwarded-for"].split(",")[0].trim()) ||
-                req.ip;
+        const ip =
+            (req.headers["x-forwarded-for"] &&
+                req.headers["x-forwarded-for"].split(",")[0].trim()) ||
+            req.ip;
 
-            const userAgent = req.headers["user-agent"];
-            const referer = req.headers["referer"] || req.headers["referrer"];
+        const userAgent = req.headers["user-agent"];
+        const referer = req.headers["referer"] || req.headers["referrer"];
 
-            await analyticsQueue.add("track-link-click", {
-                linkId: link._id,
+        // fire-and-forget: not awaited, so the redirect never waits on Redis.
+        // the worker saves the click event and increments the visits counter.
+        analyticsQueue
+            .add("track-link-click", {
+                linkId: link.linkId,
                 linkOwnerId: link.linkOwner,
                 shortCode: link.shortCode,
                 longUrl: link.longUrl,
@@ -52,13 +54,10 @@ async function redirectToLongUrl(req,res,next){
                 userAgent,
                 referer,
                 clickedAt: new Date(),
+            })
+            .catch((queueError) => {
+                console.error("Failed to enqueue analytics job", queueError);
             });
-
-            // increment total visits counter on the link document
-            await linkService.incrementVisits(link._id);
-        } catch (queueError) {
-            console.error("Failed to enqueue analytics job", queueError);
-        }
 
         return res.redirect(link.longUrl)
 

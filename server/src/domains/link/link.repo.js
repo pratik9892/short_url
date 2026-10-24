@@ -129,7 +129,8 @@ export class LinkRepository {
                 }
             )
 
-            return updatedVisits.visits
+            // null when the link was deleted before the worker ran — not an error, so the job isn't retried
+            return updatedVisits?.visits ?? null
         } catch (error) {
             console.log(error);
             throw error
