@@ -115,6 +115,6 @@ export const api = {
 
 export function shortUrlFor(code) {
   // Short links are served by the API host (port 3000 in local dev)
-  const apiOrigin = import.meta.env.VITE_API_ORIGIN || 'http://localhost:3000'
-  return `${apiOrigin}${code}`
+  const apiOrigin = (import.meta.env.VITE_API_ORIGIN || 'http://localhost:3000').replace(/\/+$/, '')
+  return `${apiOrigin}/${code}`
 }

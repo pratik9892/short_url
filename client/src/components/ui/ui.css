@@ -1,70 +1,173 @@
+/* ---------- Logo ---------- */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.logo__mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 4px 14px -4px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform var(--dur-med) var(--ease-spring);
+}
+
+.logo:hover .logo__mark {
+  transform: rotate(-12deg) scale(1.06);
+}
+
+/* ---------- Card (with cursor spotlight) ---------- */
+
 .ui-card {
+  position: relative;
   background: var(--bg-elevated);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 1.15rem 1.25rem;
-  box-shadow: var(--shadow-card);
-  transition: border-color var(--dur-fast), box-shadow var(--dur-med) var(--ease-out);
+  padding: 1.25rem 1.35rem;
+  box-shadow: var(--shadow-xs);
+  transition:
+    border-color var(--dur-fast),
+    box-shadow var(--dur-med) var(--ease-out);
+}
+
+.ui-card::before,
+.ui-stat::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), var(--spotlight), transparent 45%);
+  opacity: 0;
+  transition: opacity var(--dur-med) var(--ease-out);
+  pointer-events: none;
+}
+
+.ui-card:hover::before,
+.ui-stat:hover::before {
+  opacity: 1;
 }
 
 .ui-card:hover {
   border-color: var(--line-strong);
 }
 
+.ui-card > * {
+  position: relative;
+}
+
 .ui-card--flat {
   box-shadow: none;
 }
 
+.ui-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .ui-card__title {
-  margin: 0 0 0.15rem;
-  font-size: 0.95rem;
+  margin: 0;
+  font-size: 0.92rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 
 .ui-card__desc {
-  margin: 0 0 1rem;
-  font-size: 0.85rem;
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
   color: var(--muted);
 }
 
+/* ---------- Stat ---------- */
+
 .ui-stat {
+  position: relative;
+  overflow: hidden;
   background: var(--bg-elevated);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.1rem;
   box-shadow: var(--shadow-xs);
+  transition: border-color var(--dur-fast), transform var(--dur-med) var(--ease-out);
+}
+
+.ui-stat:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
 }
 
 .ui-stat__label {
-  display: block;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
   color: var(--muted);
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.ui-stat__icon {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
 }
 
 .ui-stat__value {
   display: block;
-  margin-top: 0.25rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  margin-top: 0.45rem;
+  font-size: 1.65rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
   color: var(--ink);
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.ui-stat__hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--faint);
+}
+
+/* ---------- Page header ---------- */
+
 .ui-page-header {
-  margin-bottom: 1.35rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+}
+
+.ui-page-header__eyebrow {
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 .ui-page-header h1 {
-  font-family: var(--font-display);
-  font-size: clamp(1.45rem, 3vw, 1.85rem);
+  font-size: clamp(1.5rem, 3vw, 1.9rem);
   font-weight: 600;
-  letter-spacing: -0.02em;
-  margin: 0 0 0.35rem;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin: 0 0 0.3rem;
 }
 
 .ui-page-header p {
@@ -72,6 +175,8 @@
   color: var(--muted);
   font-size: 0.92rem;
 }
+
+/* ---------- Panels & collapsible text ---------- */
 
 .ui-panel {
   display: flex;
@@ -84,8 +189,9 @@
   min-height: 0;
   overflow-y: auto;
   font-size: 0.88rem;
-  line-height: 1.55;
+  line-height: 1.65;
   color: var(--ink-secondary);
+  transition: max-height var(--dur-med) var(--ease-out);
 }
 
 .ui-panel__body--clamp {
@@ -94,9 +200,9 @@
 
 .ui-panel__placeholder {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   color: var(--muted);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .ui-text-toggle {
@@ -106,21 +212,64 @@
   background: none;
   color: var(--accent);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   align-self: flex-start;
 }
 
 .ui-text-toggle:hover {
   text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.collapsible-text {
+  animation: fadeUp 0.45s var(--ease-out) both;
 }
 
 .collapsible-text p {
   margin: 0;
+  white-space: pre-line;
 }
 
 .collapsible-text p.is-clamped {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ---------- Copy button (icon morph) ---------- */
+
+.copy-btn__icons {
+  position: relative;
+  display: grid;
+  width: 14px;
+  height: 14px;
+}
+
+.copy-btn__icons svg {
+  grid-area: 1 / 1;
+  transition:
+    transform var(--dur-med) var(--ease-spring),
+    opacity var(--dur-fast);
+}
+
+.copy-btn__check {
+  opacity: 0;
+  transform: scale(0.4) rotate(-30deg);
+}
+
+.copy-btn.is-copied {
+  color: var(--success);
+  border-color: var(--success);
+  background: var(--success-soft);
+}
+
+.copy-btn.is-copied .copy-btn__copy {
+  opacity: 0;
+  transform: scale(0.4) rotate(30deg);
+}
+
+.copy-btn.is-copied .copy-btn__check {
+  opacity: 1;
+  transform: none;
 }

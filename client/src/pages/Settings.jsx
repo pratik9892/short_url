@@ -72,7 +72,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="settings fade-up">
+    <div className="settings">
       <PageHeader
         title="Settings"
         subtitle="Manage your account details and security."
@@ -116,6 +116,7 @@ export default function Settings() {
               Signed in via <strong>{isGoogle ? 'Google' : 'Email & password'}</strong>
             </div>
             <button type="submit" className="btn btn-primary" disabled={profileBusy}>
+              {profileBusy && <span className="spinner" />}
               {profileBusy ? 'Saving…' : 'Save profile'}
             </button>
           </form>
@@ -162,6 +163,7 @@ export default function Settings() {
                 />
               </label>
               <button type="submit" className="btn btn-primary" disabled={passwordBusy}>
+                {passwordBusy && <span className="spinner" />}
                 {passwordBusy ? 'Updating…' : 'Change password'}
               </button>
             </form>

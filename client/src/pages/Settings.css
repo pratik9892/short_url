@@ -1,41 +1,61 @@
-.settings {
-  max-width: 720px;
-}
-
 .settings-loading {
   padding: 2rem;
 }
 
 .settings-grid {
   display: grid;
-  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+  max-width: 880px;
 }
 
-.settings-form .field:last-of-type {
-  margin-bottom: 1rem;
+.settings-grid > .ui-card {
+  padding: 1.5rem;
+  animation: fadeUp 0.55s var(--ease-out) both;
+}
+
+.settings-grid > .ui-card:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.settings-form {
+  display: grid;
+}
+
+.settings-form .btn {
+  justify-self: start;
+  margin-top: 0.4rem;
 }
 
 .settings-meta {
-  font-size: 0.88rem;
-  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.2rem 0 1rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-xs);
+  background: var(--bg-subtle);
+  font-size: 0.82rem;
 }
 
 .settings-meta strong {
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .settings-note {
   margin: 0;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: var(--muted);
-  padding: 0.85rem 1rem;
-  background: var(--bg-subtle);
+  padding: 1rem;
+  border: 1px dashed var(--line-strong);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ink-secondary);
 }
 
-.settings-note strong {
-  color: var(--ink-secondary);
+@media (max-width: 760px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
 }

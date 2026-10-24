@@ -7,6 +7,15 @@ import Card from '../components/ui/Card'
 import StatCard from '../components/ui/StatCard'
 import PageHeader from '../components/ui/PageHeader'
 import CollapsibleText from '../components/ui/CollapsibleText'
+import CopyButton from '../components/ui/CopyButton'
+import {
+  IconArrowLeft,
+  IconChart,
+  IconExternal,
+  IconGlobe,
+  IconSend,
+  IconSparkles,
+} from '../components/ui/Icons'
 import './Analytics.css'
 
 function buildDaySeries(rows) {
@@ -122,38 +131,138 @@ export default function Analytics() {
 
   const summaryText = ai?.summary?.summary || ''
   const personaText = ai?.persona?.persona || ''
+  const forecast = Array.isArray(ai?.forecast?.forecast) ? ai.forecast.forecast.map((n) => Number(n || 0)) : null
+  const maxForecast = forecast ? Math.max(1, ...forecast) : 1
+  const deviceTotal = stats.devices.desktop + stats.devices.mobile + stats.devices.tablet
+  const deviceRows = [
+    { key: 'desktop', label: 'Desktop', value: stats.devices.desktop },
+    { key: 'mobile', label: 'Mobile', value: stats.devices.mobile },
+    { key: 'tablet', label: 'Tablet', value: stats.devices.tablet },
+  ]
+  const shortUrl = link ? shortUrlFor(link.shortCode) : ''
 
   return (
-    <div className="analytics fade-up">
-      <Link to="/dashboard" className="analytics-back">← Dashboard</Link>
+    <div className="analytics">
+      <Link to="/dashboard" className="analytics-back">
+        <IconArrowLeft size={14} /> Dashboard
+      </Link>
 
       <PageHeader
-        title={link?.linkName || 'Link analytics'}
+        title={link?.linkName || (loading ? 'Loading…' : 'Link analytics')}
         subtitle={
-          link
-            ? shortUrlFor(link.shortCode)
-            : 'Performance for this short URL'
+          link ? (
+            <span className="analytics-sub">
+              <a href={shortUrl} target="_blank" rel="noreferrer" className="analytics-sub__short">
+                {shortUrl}
+              </a>
+              <span className="analytics-sub__arrow">→</span>
+              <span className="analytics-sub__long" title={link.longUrl}>
+                {link.longUrl}
+              </span>
+            </span>
+          ) : (
+            'Performance for this short URL'
+          )
+        }
+        action={
+          link && (
+            <div className="analytics-actions">
+              <CopyButton text={shortUrl} onError={() => show('Could not copy', 'error')} />
+              <a className="btn btn-ghost btn-sm" href={shortUrl} target="_blank" rel="noreferrer">
+                <IconExternal size={14} /> Open
+              </a>
+            </div>
+          )
         }
       />
 
-      {loading && <p className="muted">Loading analytics…</p>}
+      {loading && (
+        <div className="analytics-grid" aria-label="Loading analytics">
+          <section className="analytics-stats">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="ui-stat">
+                <span className="skeleton" style={{ width: '45%', height: 10 }} />
+                <span className="skeleton" style={{ width: '30%', height: 22, marginTop: 12 }} />
+              </div>
+            ))}
+          </section>
+          <div className="ui-card analytics-chart">
+            <span className="skeleton" style={{ width: '30%', height: 12 }} />
+            <span className="skeleton" style={{ width: '100%', height: 180, marginTop: 20, borderRadius: 10 }} />
+          </div>
+        </div>
+      )}
 
       {!loading && (
         <div className="analytics-grid">
-          <section className="analytics-stats">
-            <StatCard label="Clicks" value={stats.clicks} />
-            <StatCard label="Countries" value={stats.countries} />
-            <StatCard label="Mobile" value={stats.devices.mobile} />
-            <StatCard label="Desktop" value={stats.devices.desktop} />
-            <StatCard label="Top browser" value={stats.topBrowser} />
-            <StatCard label="Top referrer" value={stats.topRef} />
+          <section className="analytics-stats stagger">
+            <StatCard label="Clicks" value={stats.clicks} icon={<IconChart size={14} />} style={{ '--i': 0 }} />
+            <StatCard label="Countries" value={stats.countries} icon={<IconGlobe size={14} />} style={{ '--i': 1 }} />
+            <StatCard label="Top browser" value={stats.topBrowser} style={{ '--i': 2 }} />
+            <StatCard label="Top referrer" value={stats.topRef} style={{ '--i': 3 }} />
           </section>
 
-          <Card title="AI summary" className="analytics-ai">
-            {summaryText ? (
-              <CollapsibleText text={summaryText} collapsedLines={4} maxHeight="6rem" />
+          <Card
+            title="Clicks"
+            description="Last 14 days"
+            className="analytics-chart"
+            action={<span className="analytics-chart__total">{stats.clicks.toLocaleString()} total</span>}
+          >
+            <div className="bars" role="img" aria-label={`Clicks over the last 14 days, ${stats.clicks} total`}>
+              {stats.days.map((d, i) => (
+                <div className="bar-col" key={d.label} style={{ '--i': i }}>
+                  <div className="bar-track">
+                    <div
+                      className={`bar${d.count === 0 ? ' is-empty' : ''}`}
+                      style={{ height: `${Math.max(3, (d.count / maxDay) * 100)}%` }}
+                    >
+                      <span className="bar-tip">
+                        <strong>{d.count}</strong> {d.count === 1 ? 'click' : 'clicks'}
+                        <em>{d.label}</em>
+                      </span>
+                    </div>
+                  </div>
+                  <span className="bar-label">{i % 2 === 0 || i === stats.days.length - 1 ? d.label : ''}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="Devices" className="analytics-devices">
+            {deviceTotal === 0 ? (
+              <p className="ui-panel__placeholder">No clicks yet.</p>
             ) : (
-              <p className="ui-panel__placeholder">No summary yet.</p>
+              <>
+                <div className="device-bar">
+                  {deviceRows.map((d) =>
+                    d.value > 0 ? (
+                      <span
+                        key={d.key}
+                        className={`device-bar__seg device-bar__seg--${d.key}`}
+                        style={{ flexGrow: d.value }}
+                        title={`${d.label}: ${d.value}`}
+                      />
+                    ) : null
+                  )}
+                </div>
+                <ul className="device-legend">
+                  {deviceRows.map((d) => (
+                    <li key={d.key}>
+                      <span className={`device-dot device-dot--${d.key}`} />
+                      {d.label}
+                      <strong>{Math.round((d.value / deviceTotal) * 100)}%</strong>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </Card>
+
+          <Card title="AI summary" className="analytics-ai" action={<IconSparkles size={15} className="analytics-ai__icon" />}>
+            {summaryText ? (
+              <CollapsibleText text={summaryText} collapsedLines={4} maxHeight="6.5rem" />
+            ) : (
+              <p className="ui-panel__placeholder">No summary yet. It appears once this link gets some clicks.</p>
             )}
             {personaText && (
               <div className="analytics-persona">
@@ -163,48 +272,40 @@ export default function Analytics() {
             )}
           </Card>
 
-          <Card title="Clicks · last 14 days" className="analytics-chart">
-            <div className="bars" role="img" aria-label="Click chart">
-              {stats.days.map((d) => (
-                <div className="bar-col" key={d.label}>
-                  <div
-                    className="bar"
-                    style={{ height: `${Math.max(6, (d.count / maxDay) * 100)}%` }}
-                    title={`${d.label}: ${d.count}`}
-                  />
-                  <span>{d.label}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {Array.isArray(ai?.forecast?.forecast) && (
-            <Card title="7-day forecast" className="analytics-forecast">
-              <p className="muted forecast-total">
-                Projected total:{' '}
-                <strong>{ai.forecast.forecast.reduce((a, b) => a + Number(b || 0), 0)}</strong> clicks
-              </p>
+          {forecast && (
+            <Card
+              title="7-day forecast"
+              className="analytics-forecast"
+              action={
+                <span className="analytics-chart__total">
+                  ~{forecast.reduce((a, b) => a + b, 0).toLocaleString()} clicks
+                </span>
+              }
+            >
               <div className="forecast-row">
-                {ai.forecast.forecast.map((n, i) => (
-                  <div key={i} className="forecast-pill">
-                    <span>D{i + 1}</span>
+                {forecast.map((n, i) => (
+                  <div key={i} className="forecast-col" style={{ '--i': i }}>
+                    <div className="forecast-track">
+                      <div className="forecast-bar" style={{ height: `${Math.max(6, (n / maxForecast) * 100)}%` }} />
+                    </div>
                     <strong>{n}</strong>
+                    <span>D{i + 1}</span>
                   </div>
                 ))}
               </div>
             </Card>
           )}
 
-          <Card title="Ask about this link">
+          <Card title="Ask about this link" className="analytics-ask">
             <form className="ask-form" onSubmit={onAsk}>
-              <input name="question" maxLength={500} placeholder="Who is clicking this link?" />
-              <button className="btn btn-primary btn-sm" type="submit" disabled={asking}>
-                {asking ? '…' : 'Ask AI'}
+              <input className="input" name="question" maxLength={500} placeholder="Who is clicking this link?" />
+              <button className="btn btn-primary btn-icon" type="submit" disabled={asking} aria-label="Ask AI">
+                {asking ? <span className="spinner" /> : <IconSend size={15} />}
               </button>
             </form>
             {askAnswer && (
               <div className="analytics-ask-answer">
-                <CollapsibleText text={askAnswer} collapsedLines={4} maxHeight="6rem" />
+                <CollapsibleText key={askAnswer} text={askAnswer} collapsedLines={4} maxHeight="6rem" />
               </div>
             )}
           </Card>

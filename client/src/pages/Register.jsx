@@ -38,7 +38,8 @@ export default function Register() {
   }
 
   return (
-    <main className="auth-page fade-up">
+    <main className="auth-page bg-grid">
+      <div className="auth-glow" aria-hidden="true" />
       <div className="container auth-wrap">
         <div className="card auth-card">
           <h1>Create your account</h1>
@@ -50,7 +51,7 @@ export default function Register() {
             <span>or</span>
           </div>
 
-          <form onSubmit={onSubmit}>
+          <form onSubmit={onSubmit} className="auth-form stagger">
             <label className="field">
               <span>Full name</span>
               <input name="fullName" required placeholder="Jane Doe" autoComplete="name" />
@@ -71,6 +72,7 @@ export default function Register() {
             {error && <p className="error-text">{error}</p>}
 
             <button className="btn btn-primary auth-submit" type="submit" disabled={loading}>
+              {loading && <span className="spinner" />}
               {loading ? 'Creating…' : 'Sign up'}
             </button>
           </form>
