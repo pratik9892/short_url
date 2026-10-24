@@ -2,6 +2,8 @@ import { Queue, Worker } from "bullmq";
 import { REDIS_CONNECTION, redisDuplicate } from "../../config/redis.config.js";
 import { AnalyticsService } from "../../domains/analytics/analytics.service.js";
 import { AnalyticsRepository } from "../../domains/analytics/analytics.repo.js";
+import { LinkService } from "../../domains/link/link.service.js";
+import { LinkRepository } from "../../domains/link/link.repo.js";
 import { getGeoFromIp } from "../utils/geoip.util.js";
 
 const QUEUE_NAME = "analyticsQueue";
@@ -21,6 +23,7 @@ export const analyticsQueue = new Queue(QUEUE_NAME, {
 // Export function to create Worker - only called in worker.js
 export function createAnalyticsWorker() {
   const analyticsService = new AnalyticsService(new AnalyticsRepository());
+  const linkService = new LinkService(new LinkRepository());
 
   const analyticsWorker = new Worker(
     QUEUE_NAME,
@@ -36,6 +39,9 @@ export function createAnalyticsWorker() {
         region: geo.region,
         city: geo.city,
       });
+
+      // moved off the redirect path: the worker owns every click-driven write
+      await linkService.incrementVisits(rest.linkId);
     },
     { connection: redisDuplicate() }
   );

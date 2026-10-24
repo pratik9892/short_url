@@ -37,6 +37,18 @@ export function redisDuplicate() {
   return REDIS_CONNECTION.duplicate()
 }
 
+/**
+ * Cache connection that fails fast. The BullMQ connection uses maxRetriesPerRequest: null,
+ * which queues commands until Redis returns — fine for jobs, but it would hang redirects.
+ */
+export function createCacheClient() {
+  return REDIS_CONNECTION.duplicate({
+    maxRetriesPerRequest: 0,
+    enableOfflineQueue: false,
+    commandTimeout: 250,
+  })
+}
+
 export function logRedisConfig() {
   const url = config.redis.URL?.trim()
   const usingUrl = Boolean(url)
