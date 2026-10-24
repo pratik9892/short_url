@@ -7,7 +7,24 @@ import Card from '../components/ui/Card'
 import StatCard from '../components/ui/StatCard'
 import PageHeader from '../components/ui/PageHeader'
 import CollapsibleText from '../components/ui/CollapsibleText'
+import CopyButton from '../components/ui/CopyButton'
+import {
+  IconArrowRight,
+  IconChart,
+  IconLink,
+  IconSend,
+  IconSparkles,
+  IconTrash,
+} from '../components/ui/Icons'
 import './Dashboard.css'
+
+function hostOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
 
 export default function Dashboard() {
   const { user, loading: authLoading, isAuthenticated } = useAuth()
@@ -23,6 +40,10 @@ export default function Dashboard() {
   const [askAnswer, setAskAnswer] = useState('')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [query, setQuery] = useState('')
+  const [today] = useState(() =>
+    new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })
+  )
   const suggestTimer = useRef(null)
   const formRef = useRef(null)
 
@@ -30,7 +51,9 @@ export default function Dashboard() {
     if (showSpinner) setLoading(true)
     try {
       const res = await api.myLinks()
-      setLinks(Array.isArray(res?.data) ? res.data : [])
+      const list = Array.isArray(res?.data) ? res.data : []
+      // newest first, so a freshly created link stays at the top after the refresh
+      setLinks([...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
     } catch (err) {
       show(err.message || 'Could not load links', 'error')
     } finally {
@@ -46,6 +69,19 @@ export default function Dashboard() {
     const visits = links.reduce((s, l) => s + Number(l.visits || 0), 0)
     return { count: links.length, visits }
   }, [links])
+
+  const topLink = useMemo(
+    () => links.reduce((best, l) => (Number(l.visits || 0) > Number(best?.visits || 0) ? l : best), null),
+    [links]
+  )
+
+  const visibleLinks = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return links
+    return links.filter((l) =>
+      [l.linkName, l.shortCode, l.longUrl].some((v) => String(v || '').toLowerCase().includes(q))
+    )
+  }, [links, query])
 
   const allSelected = links.length > 0 && selectedIds.size === links.length
   const someSelected = selectedIds.size > 0
@@ -103,14 +139,7 @@ export default function Dashboard() {
     }, 700)
   }
 
-  async function copyText(text) {
-    try {
-      await navigator.clipboard.writeText(text)
-      show('Copied', 'success')
-    } catch {
-      show('Could not copy', 'error')
-    }
-  }
+  const onCopyError = () => show('Could not copy', 'error')
 
   function toggleSelect(id) {
     setSelectedIds((prev) => {
@@ -203,52 +232,64 @@ export default function Dashboard() {
   return (
     <div className="dash">
       <PageHeader
+        eyebrow={today}
         title={`Hey, ${firstName}`}
-        subtitle="Create links, track visits, and ask AI about your portfolio."
+        subtitle="Create links, track clicks, and ask AI about your audience."
       />
+
+      <section className="dash-stats stagger">
+        <StatCard label="Links" value={totals.count} icon={<IconLink size={14} />} style={{ '--i': 0 }} />
+        <StatCard label="Total clicks" value={totals.visits} icon={<IconChart size={14} />} style={{ '--i': 1 }} />
+        <StatCard
+          label="Top link"
+          value={topLink && Number(topLink.visits) > 0 ? topLink.linkName || topLink.shortCode : '—'}
+          hint={topLink && Number(topLink.visits) > 0 ? `${Number(topLink.visits).toLocaleString()} clicks` : 'No clicks yet'}
+          icon={<IconSparkles size={14} />}
+          style={{ '--i': 2 }}
+        />
+      </section>
 
       <div className="dash-layout">
         <div className="dash-col dash-col--main">
-          <Card title="New short link" className="dash-create">
-            <form ref={formRef} className="create-form" onSubmit={onCreate}>
-              <label className="field grow">
-                <span>Long URL</span>
+          <Card className="dash-create">
+            <form ref={formRef} className="shorten" onSubmit={onCreate}>
+              <label className="shorten__url">
+                <IconLink size={16} />
+                <span className="sr-only">Long URL</span>
                 <input
                   name="longUrl"
                   type="url"
                   required
-                  placeholder="https://example.com/page"
+                  placeholder="Paste a long URL…"
                   value={longUrl}
                   onChange={onLongUrlChange}
+                  autoComplete="off"
                 />
               </label>
-              <label className="field">
-                <span>Name</span>
+              <label className="shorten__name">
+                <span className="sr-only">Name</span>
                 <input
                   name="linkName"
                   maxLength={20}
-                  placeholder="Optional label"
+                  placeholder="Name (optional)"
                   value={linkName}
                   onChange={(e) => setLinkName(e.target.value)}
+                  autoComplete="off"
                 />
               </label>
-              <button className="btn btn-primary create-submit" type="submit" disabled={creating}>
-                {creating ? 'Creating…' : 'Shorten'}
+              <button className="btn btn-primary shorten__submit" type="submit" disabled={creating}>
+                {creating ? <span className="spinner" /> : <IconArrowRight size={15} />}
+                <span>{creating ? 'Shortening' : 'Shorten'}</span>
               </button>
             </form>
+
             {created && (
-              <div className="create-result">
-                <span className="muted">Latest</span>
-                <div className="create-result-row">
-                  <code>{shortUrlFor(created.shortCode)}</code>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => copyText(shortUrlFor(created.shortCode))}
-                  >
-                    Copy
-                  </button>
-                </div>
+              <div className="shorten-result" key={created._id}>
+                <span className="shorten-result__badge">New</span>
+                <a className="shorten-result__url" href={shortUrlFor(created.shortCode)} target="_blank" rel="noreferrer">
+                  {shortUrlFor(created.shortCode)}
+                </a>
+                <CopyButton text={shortUrlFor(created.shortCode)} onError={onCopyError} />
               </div>
             )}
           </Card>
@@ -256,110 +297,180 @@ export default function Dashboard() {
           <Card
             title="Your links"
             className="dash-links"
-            description={links.length ? `${links.length} active short URLs` : undefined}
+            description={links.length ? `${links.length} short ${links.length === 1 ? 'link' : 'links'}` : undefined}
+            action={
+              links.length > 0 && (
+                <input
+                  className="input dash-search"
+                  type="search"
+                  placeholder="Search links…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  aria-label="Search links"
+                />
+              )
+            }
           >
             {links.length > 0 && (
-              <div className="links-toolbar">
+              <div className={`links-toolbar${someSelected ? ' has-selection' : ''}`}>
                 <label className="select-all">
                   <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} />
-                  <span>Select all</span>
+                  <span>{someSelected ? `${selectedIds.size} selected` : 'Select all'}</span>
                 </label>
                 {someSelected && (
                   <button
                     type="button"
-                    className="btn btn-danger btn-sm"
+                    className="btn btn-danger is-solid btn-sm links-toolbar__delete"
                     onClick={onBulkDelete}
                     disabled={bulkDeleting}
                   >
-                    {bulkDeleting ? 'Deleting…' : `Delete (${selectedIds.size})`}
+                    {bulkDeleting ? <span className="spinner" /> : <IconTrash size={14} />}
+                    {bulkDeleting ? 'Deleting…' : `Delete ${selectedIds.size}`}
                   </button>
                 )}
               </div>
             )}
 
-            {loading && <p className="muted">Loading links…</p>}
-            {!loading && links.length === 0 && (
-              <p className="muted empty">No links yet. Create your first one above.</p>
-            )}
-
-            <ul className="link-list">
-              {links.map((link, i) => {
-                const url = shortUrlFor(link.shortCode)
-                const checked = selectedIds.has(link._id)
-                return (
-                  <li
-                    key={link._id}
-                    className={`link-row${checked ? ' is-selected' : ''}`}
-                    style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}
-                  >
-                    <label className="link-select">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleSelect(link._id)}
-                        aria-label={`Select ${link.linkName || link.shortCode}`}
-                      />
-                    </label>
+            {loading && (
+              <ul className="link-list" aria-label="Loading links">
+                {[0, 1, 2].map((i) => (
+                  <li key={i} className="link-row link-row--skeleton">
+                    <span className="skeleton" style={{ width: 16, height: 16 }} />
+                    <span className="skeleton" style={{ width: 34, height: 34, borderRadius: 9 }} />
                     <div className="link-main">
-                      <strong>{link.linkName || link.shortCode}</strong>
-                      <a href={url} target="_blank" rel="noreferrer">{url}</a>
-                      <span className="muted long-url">{link.longUrl}</span>
-                    </div>
-                    <div className="link-meta">
-                      <span>{Number(link.visits || 0)} clicks</span>
-                    </div>
-                    <div className="link-actions">
-                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => copyText(url)}>
-                        Copy
-                      </button>
-                      <Link className="btn btn-ghost btn-sm" to={`/links/${link._id}/analytics`}>
-                        Analytics
-                      </Link>
-                      <button type="button" className="btn btn-danger btn-sm" onClick={() => onDelete(link._id)}>
-                        Delete
-                      </button>
+                      <span className="skeleton" style={{ width: '40%', height: 12 }} />
+                      <span className="skeleton" style={{ width: '65%', height: 10, marginTop: 8 }} />
                     </div>
                   </li>
-                )
-              })}
-            </ul>
+                ))}
+              </ul>
+            )}
+
+            {!loading && links.length === 0 && (
+              <div className="empty">
+                <span className="empty__icon">
+                  <IconLink size={20} />
+                </span>
+                <strong>No links yet</strong>
+                <p className="muted">Paste a URL above to create your first short link.</p>
+              </div>
+            )}
+
+            {!loading && links.length > 0 && visibleLinks.length === 0 && (
+              <p className="muted dash-nomatch">No links match “{query}”.</p>
+            )}
+
+            {!loading && (
+              <ul className="link-list">
+                {visibleLinks.map((link, i) => {
+                  const url = shortUrlFor(link.shortCode)
+                  const checked = selectedIds.has(link._id)
+                  const isNew = created?._id === link._id
+                  return (
+                    <li
+                      key={link._id}
+                      className={`link-row${checked ? ' is-selected' : ''}${isNew ? ' is-new' : ''}`}
+                      style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
+                    >
+                      <label className="link-select">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSelect(link._id)}
+                          aria-label={`Select ${link.linkName || link.shortCode}`}
+                        />
+                      </label>
+                      <span className="link-avatar" aria-hidden="true">
+                        {hostOf(link.longUrl).charAt(0).toUpperCase()}
+                      </span>
+                      <div className="link-main">
+                        <div className="link-main__top">
+                          <strong>{link.linkName || link.shortCode}</strong>
+                          <a href={url} target="_blank" rel="noreferrer" className="link-short">
+                            /{link.shortCode}
+                          </a>
+                        </div>
+                        <span className="long-url" title={link.longUrl}>
+                          {link.longUrl}
+                        </span>
+                      </div>
+                      <Link className="link-clicks" to={`/links/${link._id}/analytics`} title="View analytics">
+                        <IconChart size={13} />
+                        {Number(link.visits || 0).toLocaleString()}
+                      </Link>
+                      <div className="link-actions">
+                        <CopyButton
+                          text={url}
+                          onError={onCopyError}
+                          className="btn btn-quiet btn-icon btn-sm"
+                          showLabel={false}
+                        />
+                        <Link
+                          className="btn btn-quiet btn-icon btn-sm"
+                          to={`/links/${link._id}/analytics`}
+                          aria-label="Analytics"
+                          title="Analytics"
+                        >
+                          <IconArrowRight size={14} />
+                        </Link>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-icon btn-sm"
+                          onClick={() => onDelete(link._id)}
+                          aria-label="Delete"
+                          title="Delete"
+                        >
+                          <IconTrash size={14} />
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </Card>
         </div>
 
         <aside className="dash-col dash-col--aside">
-          <div className="dash-stats">
-            <StatCard label="Links" value={totals.count} />
-            <StatCard label="Visits" value={totals.visits} />
-          </div>
-
-          <Card title="AI insight" className="dash-ai-panel ui-panel">
-            <div className="dash-ai-panel__inner">
+          <Card
+            title="AI insight"
+            description="A summary of how your links perform."
+            className="dash-ai ui-panel"
+          >
+            <div className={`dash-ai__body${aiBusy && !insight ? ' is-thinking' : ''}`}>
               {insight ? (
-                <CollapsibleText text={insight} collapsedLines={4} maxHeight="6.5rem" />
+                <CollapsibleText key={insight} text={insight} collapsedLines={5} maxHeight="8rem" />
+              ) : aiBusy ? (
+                <div className="dash-ai__skeleton">
+                  <span className="skeleton" style={{ width: '95%' }} />
+                  <span className="skeleton" style={{ width: '80%' }} />
+                  <span className="skeleton" style={{ width: '60%' }} />
+                </div>
               ) : (
-                <p className="ui-panel__placeholder">Portfolio summary from Shortly AI.</p>
+                <p className="ui-panel__placeholder">Generate an insight to see trends across all your links.</p>
               )}
             </div>
             <button
               type="button"
-              className="btn btn-ghost btn-sm dash-ai-btn"
+              className="btn btn-ghost btn-sm dash-ai__btn"
               onClick={onAskInsight}
               disabled={aiBusy}
             >
-              {aiBusy ? 'Thinking…' : 'Generate insight'}
+              {aiBusy ? <span className="spinner" /> : <IconSparkles size={14} />}
+              {aiBusy ? 'Thinking…' : insight ? 'Regenerate' : 'Generate insight'}
             </button>
           </Card>
 
           <Card title="Ask AI" description="Questions about all your links." className="dash-ask ui-panel">
             <form className="ask-form" onSubmit={onAskQuestion}>
-              <input name="question" maxLength={500} placeholder="What should I promote?" />
-              <button className="btn btn-primary btn-sm" type="submit" disabled={aiBusy}>
-                Ask
+              <input className="input" name="question" maxLength={500} placeholder="What should I promote?" />
+              <button className="btn btn-primary btn-icon" type="submit" disabled={aiBusy} aria-label="Ask">
+                {aiBusy ? <span className="spinner" /> : <IconSend size={15} />}
               </button>
             </form>
             {askAnswer && (
               <div className="dash-ask__answer">
-                <CollapsibleText text={askAnswer} collapsedLines={3} maxHeight="5.5rem" />
+                <CollapsibleText key={askAnswer} text={askAnswer} collapsedLines={4} maxHeight="7rem" />
               </div>
             )}
           </Card>

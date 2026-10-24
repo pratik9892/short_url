@@ -2,206 +2,203 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useInView } from '../hooks/useInView'
 import HeroMockup from '../components/landing/HeroMockup'
-import heroImage from '../assets/hero.png'
+import { trackSpotlight } from '../components/ui/spotlight'
+import {
+  IconArrowRight,
+  IconBolt,
+  IconChart,
+  IconLink,
+  IconShield,
+  IconSparkles,
+} from '../components/ui/Icons'
 import './Landing.css'
 
 const features = [
   {
-    icon: '🔗',
-    title: 'Short links',
-    text: 'Turn long URLs into branded short links with optional names and instant copy.',
+    icon: <IconLink size={18} />,
+    title: 'Short links, instantly',
+    text: 'Paste a URL, get a short link. AI suggests a name while you type.',
   },
   {
-    icon: '📊',
+    icon: <IconChart size={18} />,
     title: 'Click analytics',
-    text: 'See devices, countries, referrers, and a 14-day chart for every link you share.',
+    text: 'Countries, devices, referrers and a 14-day trend for every link.',
   },
   {
-    icon: '✨',
+    icon: <IconSparkles size={18} />,
     title: 'AI insights',
-    text: 'Ask Shortly to summarize performance or suggest what to promote next.',
+    text: 'Ask questions about your links and get answers in plain language.',
   },
   {
-    icon: '🔐',
-    title: 'Secure accounts',
-    text: 'Email sign-up or Google login with JWT-protected dashboard access.',
+    icon: <IconShield size={18} />,
+    title: 'Secure by default',
+    text: 'Google or email sign-in, JWT-protected APIs and rate limiting.',
   },
 ]
 
 const steps = [
-  { n: '01', title: 'Paste a URL', text: 'Drop any long link into the dashboard shorten form.' },
-  { n: '02', title: 'Share the short link', text: 'Copy your Shortly URL and post it anywhere.' },
-  { n: '03', title: 'Learn from clicks', text: 'Open analytics and AI to see who engaged and when.' },
+  { n: '1', title: 'Paste', text: 'Drop any long URL into your dashboard.' },
+  { n: '2', title: 'Share', text: 'Copy the short link and post it anywhere.' },
+  { n: '3', title: 'Learn', text: 'Watch clicks arrive and ask AI what they mean.' },
 ]
 
-function RevealSection({ children, className = '' }) {
-  const [ref, visible] = useInView({ threshold: 0.12 })
+const HEADLINE = ['Short', 'links.']
+const HEADLINE_2 = ['Real', 'insight.']
+
+function Reveal({ children, className = '', as: Tag = 'section' }) {
+  const [ref, visible] = useInView({ threshold: 0.15 })
   return (
-    <section
-      ref={ref}
-      className={`landing-reveal ${visible ? 'is-visible' : ''} ${className}`.trim()}
-    >
+    <Tag ref={ref} className={`reveal ${visible ? 'is-visible' : ''} ${className}`.trim()}>
       {children}
-    </section>
+    </Tag>
   )
 }
 
 export default function Landing() {
   const { isAuthenticated } = useAuth()
+  const ctaTo = isAuthenticated ? '/dashboard' : '/register'
 
   return (
     <main className="landing">
-      <div className="landing-orb landing-orb--a" aria-hidden="true" />
-      <div className="landing-orb landing-orb--b" aria-hidden="true" />
+      <section className="hero bg-grid">
+        <div className="hero__aurora" aria-hidden="true" />
+        <div className="container hero__inner">
+          <Link to={ctaTo} className="hero__pill">
+            <span className="hero__pill-dot" />
+            Redis-cached redirects in under 5 ms
+            <IconArrowRight size={13} />
+          </Link>
 
-      <section className="landing-hero container">
-        <div className="landing-hero__grid">
-          <div className="landing-hero__copy fade-up">
-            <p className="landing-eyebrow">
-              <span className="landing-eyebrow__dot" />
-              URL shortener · analytics · AI
-            </p>
-            <h1>
-              Share smarter links.
-              <span className="landing-gradient-text"> Know what works.</span>
-            </h1>
-            <p className="landing-lead">
-              Shortly is a modern link platform for creators and teams—short URLs, real-time
-              click data, and AI that explains your audience in plain language.
-            </p>
-            <div className="landing-cta">
-              {isAuthenticated ? (
-                <Link to="/dashboard" className="btn btn-primary btn-lg">
-                  Open dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link to="/register" className="btn btn-primary btn-lg">
-                    Get started free
-                  </Link>
-                  <Link to="/login" className="btn btn-ghost btn-lg">
-                    Log in
-                  </Link>
-                </>
-              )}
-            </div>
-            <ul className="landing-trust">
-              <li>No credit card</li>
-              <li>Google sign-in</li>
-              <li>Built for speed</li>
-            </ul>
+          <h1 className="hero__title">
+            <span className="hero__line">
+              {HEADLINE.map((w, i) => (
+                <span key={w} className="hero__word" style={{ '--i': i }}>
+                  {w}
+                </span>
+              ))}
+            </span>
+            <span className="hero__line hero__line--gradient">
+              {HEADLINE_2.map((w, i) => (
+                <span key={w} className="hero__word" style={{ '--i': i + 2 }}>
+                  {w}
+                </span>
+              ))}
+            </span>
+          </h1>
+
+          <p className="hero__lead">
+            Shorten URLs, track every click, and let AI explain who your audience is. Fast, simple
+            and open.
+          </p>
+
+          <div className="hero__cta">
+            <Link to={ctaTo} className="btn btn-primary btn-lg">
+              {isAuthenticated ? 'Open dashboard' : 'Start for free'}
+              <IconArrowRight size={15} />
+            </Link>
+            {!isAuthenticated && (
+              <Link to="/login" className="btn btn-ghost btn-lg">
+                Log in
+              </Link>
+            )}
           </div>
 
-          <div className="landing-hero__visual fade-up" style={{ animationDelay: '120ms' }}>
-            <div className="landing-hero__image-wrap">
-              <img
-                src={heroImage}
-                alt="Shortly dashboard preview"
-                className="landing-hero__image"
-                width={640}
-                height={480}
-                loading="eager"
-              />
-            </div>
+          <div className="hero__demo">
             <HeroMockup />
           </div>
         </div>
       </section>
 
-      <RevealSection className="landing-stats container">
-        <div className="landing-stat">
-          <strong>1-click</strong>
-          <span>Shorten & copy</span>
-        </div>
-        <div className="landing-stat">
-          <strong>14-day</strong>
-          <span>Click charts</span>
-        </div>
-        <div className="landing-stat">
-          <strong>AI</strong>
-          <span>Portfolio Q&A</span>
-        </div>
-        <div className="landing-stat">
-          <strong>Secure</strong>
-          <span>JWT + cookies</span>
-        </div>
-      </RevealSection>
-
-      <RevealSection className="container landing-section">
-        <header className="landing-section__head">
-          <h2>Everything you need to grow with links</h2>
-          <p className="muted">
-            One dashboard to create, measure, and understand every URL you share.
-          </p>
+      <Reveal className="container section">
+        <header className="section__head">
+          <span className="section__eyebrow">Features</span>
+          <h2>Everything a link needs. Nothing it doesn't.</h2>
         </header>
-        <div className="landing-features">
+        <div className="features">
           {features.map((f, i) => (
             <article
               key={f.title}
-              className="landing-feature"
-              style={{ transitionDelay: `${i * 60}ms` }}
+              className="feature"
+              style={{ '--i': i }}
+              onPointerMove={trackSpotlight}
             >
-              <span className="landing-feature__icon" aria-hidden="true">{f.icon}</span>
+              <span className="feature__icon">{f.icon}</span>
               <h3>{f.title}</h3>
               <p>{f.text}</p>
             </article>
           ))}
         </div>
-      </RevealSection>
+      </Reveal>
 
-      <RevealSection className="landing-showcase">
-        <div className="container landing-showcase__inner">
-          <div className="landing-showcase__copy">
-            <h2>See the full picture per link</h2>
-            <p>
-              Drill into analytics for any short URL—clicks over time, top referrers, device mix,
-              and AI-generated summaries so you spend less time in spreadsheets.
-            </p>
-            <Link to={isAuthenticated ? '/dashboard' : '/register'} className="btn btn-primary">
-              {isAuthenticated ? 'View your links' : 'Try Shortly'}
-            </Link>
+      <Reveal className="container section">
+        <header className="section__head">
+          <span className="section__eyebrow">Under the hood</span>
+          <h2>Built like a production system.</h2>
+          <p>
+            Redirects read from a Redis cache. Analytics are written by a background worker, so
+            clicks never wait on the database.
+          </p>
+        </header>
+
+        <div className="arch" aria-label="Architecture: browser to API to Redis cache, with MongoDB on cache miss and a BullMQ worker writing analytics">
+          <div className="arch__row">
+            <div className="arch__node">Browser</div>
+            <div className="arch__wire"><span /></div>
+            <div className="arch__node arch__node--accent">
+              <IconBolt size={14} /> API
+            </div>
+            <div className="arch__wire"><span /></div>
+            <div className="arch__node">
+              Redis cache
+              <small>~5 ms hit</small>
+            </div>
           </div>
-          <div className="landing-showcase__visual">
-            <img src={heroImage} alt="" className="landing-showcase__img" loading="lazy" />
-            <div className="landing-showcase__card">
-              <span className="muted">AI insight</span>
-              <p>
-                Mobile traffic leads at 62%. Promote your top link on Instagram this week for the
-                best lift.
-              </p>
+          <div className="arch__row arch__row--sub">
+            <div className="arch__node arch__node--muted">
+              MongoDB
+              <small>on cache miss</small>
+            </div>
+            <div className="arch__wire arch__wire--rev"><span /></div>
+            <div className="arch__node arch__node--muted">
+              BullMQ worker
+              <small>clicks · geo · visits</small>
+            </div>
+            <div className="arch__wire arch__wire--rev"><span /></div>
+            <div className="arch__node arch__node--muted">
+              Job queue
+              <small>fire-and-forget</small>
             </div>
           </div>
         </div>
-      </RevealSection>
+      </Reveal>
 
-      <RevealSection className="container landing-section">
-        <header className="landing-section__head">
-          <h2>How it works</h2>
-          <p className="muted">Three steps from long URL to actionable insight.</p>
+      <Reveal className="container section">
+        <header className="section__head">
+          <span className="section__eyebrow">How it works</span>
+          <h2>Three steps. Zero friction.</h2>
         </header>
-        <ol className="landing-steps">
+        <ol className="steps">
           {steps.map((s, i) => (
-            <li key={s.n} className="landing-step" style={{ transitionDelay: `${i * 80}ms` }}>
-              <span className="landing-step__n">{s.n}</span>
+            <li key={s.n} className="step" style={{ '--i': i }}>
+              <span className="step__n">{s.n}</span>
               <h3>{s.title}</h3>
               <p>{s.text}</p>
             </li>
           ))}
         </ol>
-      </RevealSection>
+      </Reveal>
 
-      <RevealSection className="landing-cta-band">
-        <div className="container landing-cta-band__inner">
-          <h2>Ready to shorten your first link?</h2>
-          <p>Join Shortly and turn every click into clarity.</p>
-          <Link
-            to={isAuthenticated ? '/dashboard' : '/register'}
-            className="btn btn-primary btn-lg landing-cta-band__btn"
-          >
+      <Reveal className="container section">
+        <div className="cta-band">
+          <div className="cta-band__glow" aria-hidden="true" />
+          <h2>Ready to share smarter?</h2>
+          <p>Create your first short link in under a minute.</p>
+          <Link to={ctaTo} className="btn btn-primary btn-lg">
             {isAuthenticated ? 'Go to dashboard' : 'Create free account'}
+            <IconArrowRight size={15} />
           </Link>
         </div>
-      </RevealSection>
+      </Reveal>
     </main>
   )
 }

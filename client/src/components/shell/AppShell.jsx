@@ -1,38 +1,8 @@
-import { Link, NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import Logo from '../ui/Logo'
+import { IconGrid, IconLogout, IconSettings } from '../ui/Icons'
 import './AppShell.css'
-
-function IconGrid() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 13h6V4H4v9zm10 7h6v-9h-6v9zM4 20h6v-5H4v5zm10-11h6V4h-6v5z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function IconSettings() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-      />
-      <path
-        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1.05 1.41 1.15H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
 
 export default function AppShell() {
   const { user, logout, isAuthenticated, loading } = useAuth()
@@ -51,7 +21,11 @@ export default function AppShell() {
   if (loading) {
     return (
       <div className="app-shell app-shell--center">
-        <p className="muted">Loading…</p>
+        <span className="app-boot" aria-label="Loading">
+          <span />
+          <span />
+          <span />
+        </span>
       </div>
     )
   }
@@ -60,28 +34,27 @@ export default function AppShell() {
     return <Navigate to="/login" replace />
   }
 
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard', icon: <IconGrid size={17} />, active: dashboardActive },
+    { to: '/settings', label: 'Settings', icon: <IconSettings size={17} />, active: settingsActive },
+  ]
+
   return (
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="App navigation">
-        <Link to="/dashboard" className="app-sidebar__brand">
-          Shortly
-        </Link>
+        <Logo to="/dashboard" className="app-sidebar__brand" />
 
         <nav className="app-sidebar__nav">
-          <NavLink
-            to="/dashboard"
-            className={`app-sidebar__link${dashboardActive ? ' is-active' : ''}`}
-          >
-            <IconGrid />
-            <span>Dashboard</span>
-          </NavLink>
-          <NavLink
-            to="/settings"
-            className={`app-sidebar__link${settingsActive ? ' is-active' : ''}`}
-          >
-            <IconSettings />
-            <span>Settings</span>
-          </NavLink>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={`app-sidebar__link${item.active ? ' is-active' : ''}`}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
         </nav>
 
         <div className="app-sidebar__foot">
@@ -91,16 +64,41 @@ export default function AppShell() {
               <strong>{user?.fullName || user?.username}</strong>
               <span>{user?.email}</span>
             </div>
+            <button
+              type="button"
+              className="btn btn-quiet btn-icon btn-sm"
+              onClick={onLogout}
+              aria-label="Log out"
+              title="Log out"
+            >
+              <IconLogout size={16} />
+            </button>
           </div>
-          <button type="button" className="btn btn-ghost btn-sm app-sidebar__logout" onClick={onLogout}>
-            Log out
-          </button>
         </div>
       </aside>
 
-      <div className="app-main">
-        <Outlet />
-      </div>
+      <main className="app-main bg-grid">
+        <div key={location.pathname} className="app-main__inner page-enter">
+          <Outlet />
+        </div>
+      </main>
+
+      <nav className="app-tabbar" aria-label="App navigation">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={`app-tabbar__link${item.active ? ' is-active' : ''}`}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+        <button type="button" className="app-tabbar__link" onClick={onLogout}>
+          <IconLogout size={17} />
+          <span>Log out</span>
+        </button>
+      </nav>
     </div>
   )
 }

@@ -31,7 +31,8 @@ export default function Login() {
   }
 
   return (
-    <main className="auth-page fade-up">
+    <main className="auth-page bg-grid">
+      <div className="auth-glow" aria-hidden="true" />
       <div className="container auth-wrap">
         <div className="card auth-card">
           <h1>Welcome back</h1>
@@ -43,7 +44,7 @@ export default function Login() {
             <span>or</span>
           </div>
 
-          <form onSubmit={onSubmit}>
+          <form onSubmit={onSubmit} className="auth-form stagger">
             <label className="field">
               <span>Email</span>
               <input name="email" type="email" required placeholder="you@example.com" autoComplete="email" />
@@ -56,6 +57,7 @@ export default function Login() {
             {error && <p className="error-text">{error}</p>}
 
             <button className="btn btn-primary auth-submit" type="submit" disabled={loading}>
+              {loading && <span className="spinner" />}
               {loading ? 'Signing in…' : 'Log in'}
             </button>
           </form>
