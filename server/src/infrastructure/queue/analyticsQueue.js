@@ -5,6 +5,7 @@ import { AnalyticsRepository } from "../../domains/analytics/analytics.repo.js";
 import { LinkService } from "../../domains/link/link.service.js";
 import { LinkRepository } from "../../domains/link/link.repo.js";
 import { getGeoFromIp } from "../utils/geoip.util.js";
+import { getDeviceFromUserAgent } from "../utils/ua.util.js";
 
 const QUEUE_NAME = "analyticsQueue";
 
@@ -31,13 +32,17 @@ export function createAnalyticsWorker() {
       const { ip, ...rest } = job.data || {};
       
       const geo = getGeoFromIp(ip);
-      
+      const device = getDeviceFromUserAgent(rest.userAgent);
+
       await analyticsService.trackClickEvent({
         ...rest,
         ip,
         country: geo.country,
         region: geo.region,
         city: geo.city,
+        browser: device.browser,
+        os: device.os,
+        deviceType: device.deviceType,
       });
 
       // moved off the redirect path: the worker owns every click-driven write
