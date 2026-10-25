@@ -34,10 +34,8 @@ async function redirectToLongUrl(req,res,next){
 
         const link = await linkService.getLinkByShortCode(shortCode)
 
-        const ip =
-            (req.headers["x-forwarded-for"] &&
-                req.headers["x-forwarded-for"].split(",")[0].trim()) ||
-            req.ip;
+        // "trust proxy" in app.js makes req.ip the address our proxy saw, not a client-supplied header
+        const ip = req.ip;
 
         const userAgent = req.headers["user-agent"];
         const referer = req.headers["referer"] || req.headers["referrer"];
