@@ -47,6 +47,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
     command: ["npm", "run", "worker"]
+    # The image's HEALTHCHECK probes the API's /health; the worker has no HTTP server.
+    healthcheck:
+      disable: true
     depends_on:
       - mongo
       - redis
