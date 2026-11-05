@@ -54,7 +54,7 @@ async function redirectToLongUrl(req,res,next){
                 clickedAt: new Date(),
             })
             .catch((queueError) => {
-                console.error("Failed to enqueue analytics job", queueError);
+                req.log.error({ err: queueError }, "failed to enqueue analytics job");
             });
 
         return res.redirect(link.longUrl)

@@ -1,4 +1,5 @@
 import { configDotenv } from "dotenv"
+import { logger } from "../../infrastructure/logger/logger.js"
 
 configDotenv()
 
@@ -60,11 +61,11 @@ export function getAIConfig() {
 
   // If Groq key is set but env base still resolves to a bad path, force the known-good URL
   if (usingGroqKey && chatCompletionsUrl !== GROQ_CHAT_URL) {
-    console.warn("[ai] GROQ_API_KEY set but chat URL looks wrong; using default Groq endpoint", {
+    logger.warn({
       env_base: envBase || "(empty)",
       resolved: chatCompletionsUrl,
       using: GROQ_CHAT_URL,
-    })
+    }, "GROQ_API_KEY set but chat URL looks wrong; using default Groq endpoint")
     const resolved = resolveGroqUrls(GROQ_DEFAULT_BASE)
     baseUrl = resolved.baseUrl
     chatCompletionsUrl = resolved.chatCompletionsUrl
@@ -86,10 +87,7 @@ export function getAIConfig() {
       : "gpt-4o-mini")
   if (deprecatedModelMap[model]) {
     const replacement = deprecatedModelMap[model]
-    console.warn("[ai] deprecated GROQ_MODEL; using replacement", {
-      was: model,
-      now: replacement,
-    })
+    logger.warn({ was: model, now: replacement }, "deprecated GROQ_MODEL; using replacement")
     model = replacement
   }
 
@@ -109,14 +107,14 @@ export function getAIConfig() {
 /** Safe startup log — never prints full API key */
 export function logAIConfig() {
   const c = getAIConfig()
-  console.log("[ai] config", {
+  logger.info({
     api_key_present: Boolean(c.apiKey),
     api_key_length: c.apiKey.length,
     api_key_source: c.keySource,
     base_url: c.baseUrl || "(missing — set OPENAI_BASE_URL=https://api.groq.com/openai/v1)",
     model: c.model,
     chat_completions_url: c.chatCompletionsUrl || "(missing)",
-  })
+  }, "AI config")
 }
 
 export function getProviderInfo() {

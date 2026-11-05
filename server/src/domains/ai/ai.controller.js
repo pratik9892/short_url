@@ -12,13 +12,12 @@ async function postDashboardInsight(req, res, next) {
   try {
     const ai = getAIConfig()
     const links = await linkRepo.getAllShortUrls(req.user._id)
-    console.log("[ai] generate insight clicked", {
-      api_route: `${req.method} ${req.originalUrl}`,
+    req.log.debug({
       groq_url: ai.chatCompletionsUrl,
       groq_model: ai.model,
       api_key_present: Boolean(ai.apiKey),
       link_count: links.length,
-    })
+    }, "dashboard insight requested")
     const result = await AIService.dashboardInsight(req.user._id, links)
     return res.status(StatusCodes.OK).json({
       success: true,
@@ -71,7 +70,7 @@ async function getLinkAIAnalytics(req, res, next) {
     ])
     const [summary, persona] = results.map((r, i) => {
       if (r.status === "fulfilled") return r.value
-      console.error(`[ai] link ${parts[i]} failed`, r.reason?.message || r.reason)
+      req.log.error({ part: parts[i], err: r.reason }, "link AI call failed")
       return null
     })
 

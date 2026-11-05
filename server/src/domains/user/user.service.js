@@ -8,6 +8,7 @@ import {
   verifyRefreshToken,
 } from "../../utils/jwt.util.js";
 import bcrypt from "bcrypt";
+import { logger } from "../../infrastructure/logger/logger.js";
 
 export class UserService {
   constructor(userRepository) {
@@ -57,7 +58,6 @@ export class UserService {
 
       return registeredUser;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -96,7 +96,6 @@ export class UserService {
 
       return { user: userExists, tokens: { accessToken, refreshToken } };
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -137,7 +136,7 @@ export class UserService {
             username,
           });
         } catch (queueError) {
-          console.error("Failed to enqueue welcome email", queueError);
+          logger.error({ err: queueError }, "failed to enqueue welcome email");
         }
       }
     }
@@ -175,7 +174,6 @@ export class UserService {
 
       return logoutUser;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -190,7 +188,6 @@ export class UserService {
 
       return user;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -204,7 +201,6 @@ export class UserService {
 
       return updatedUser;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -227,7 +223,6 @@ export class UserService {
         oldPassword,
         loggedUser.password
       );
-      console.log(isPassCorrect);
 
       if (!isPassCorrect) {
         throw new ConflictError("Old Password is incorrect");
@@ -241,7 +236,6 @@ export class UserService {
 
       return updatedPassword;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -286,7 +280,6 @@ export class UserService {
 
 
     } catch (error) {
-        console.log(error)
         throw error
     }
   }

@@ -2,13 +2,14 @@ import sgMail from "@sendgrid/mail"
 import { config } from "../../config/server.config.js"
 import {ConflictError} from "../../errors/conflictError.js"
 import { configDotenv } from "dotenv"
+import { logger } from "../logger/logger.js"
 
 configDotenv()
 
 if(config.email.SENDGRID_APIKEY){
     sgMail.setApiKey(config.email.SENDGRID_APIKEY)
 } else {
-    console.log("sendgrid api key missing")
+    logger.warn("SENDGRID_API_KEY missing; welcome emails will fail")
 }
 
 
@@ -16,7 +17,7 @@ export async function sendWelcomeEmail(email,username){
     const senderEmail = config.email.SENDGRID_SENDER_EMAIL || "test@example.com";
 
      if (senderEmail === 'test@example.com') {
-        console.warn(`[SendGrid WARN] Using placeholder sender email. Check 'SENDER_EMAIL' in config.`);
+        logger.warn("SENDER_EMAIL not set; using placeholder sender");
     }
 
     const message = {
@@ -37,11 +38,11 @@ export async function sendWelcomeEmail(email,username){
     try {
             const [response] = await sgMail.send(message);
 
-            console.log(`Email sent successfully to ${email} with username : ${username}.Status : ${response.statusCode}`);
+            logger.info({ statusCode: response.statusCode }, "welcome email sent");
             return 'EmailSent'
             
     } catch (error) {
-        console.log(error);
+        logger.error({ statusCode: error?.code, errors: error?.response?.body?.errors }, "SendGrid send failed");
         throw new ConflictError("Email not send")
     }
 }

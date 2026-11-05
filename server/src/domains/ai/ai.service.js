@@ -1,5 +1,6 @@
 import { badRequest } from "../../errors/badRequest.js"
 import { getAIConfig } from "./ai.config.js"
+import { logger } from "../../infrastructure/logger/logger.js"
 
 function requireAIConfig() {
   const c = getAIConfig()
@@ -32,12 +33,12 @@ async function chat(system, user, opts = {}) {
   }
   if (opts.response_format) body.response_format = opts.response_format
 
-  console.log("[ai] groq request", {
+  logger.debug({
     url: c.chatCompletionsUrl,
     model: c.model,
     system_chars: system.length,
     user_chars: user.length,
-  })
+  }, "groq request")
 
   let res
   let rawText = ""
@@ -52,7 +53,7 @@ async function chat(system, user, opts = {}) {
     })
     rawText = await res.text()
   } catch (err) {
-    console.error("[ai] groq network error", err?.message || err)
+    logger.error({ err }, "groq network error")
     throw new badRequest("Groq request failed", {
       reason: err?.message || "network error",
     })
@@ -65,14 +66,14 @@ async function chat(system, user, opts = {}) {
     } catch {
       groqError = null
     }
-    console.error("[ai] groq http error", {
+    logger.error({
       status: res.status,
       statusText: res.statusText,
       url: c.chatCompletionsUrl,
       model: c.model,
       groq_error: groqError,
       body: rawText.slice(0, 1000),
-    })
+    }, "groq http error")
     throw new badRequest(
       groqError?.message || `Groq API HTTP ${res.status}`,
       {
@@ -95,21 +96,20 @@ async function chat(system, user, opts = {}) {
   try {
     data = JSON.parse(rawText)
   } catch {
-    console.error("[ai] groq invalid json", rawText.slice(0, 300))
+    logger.error({ body: rawText.slice(0, 300) }, "groq invalid json")
     throw new badRequest("Groq API invalid JSON", { body: rawText.slice(0, 300) })
   }
 
   const choice = data?.choices?.[0]
   const content = choice?.message?.content ?? ""
 
-  console.log("[ai] groq response", {
+  logger.debug({
     id: data.id,
     model: data.model,
     usage: data.usage,
     finish_reason: choice?.finish_reason,
-    content_preview: content.slice(0, 120),
     content_length: content.length,
-  })
+  }, "groq response")
 
   if (!String(content).trim()) {
     throw new badRequest("Groq API empty completion", {
