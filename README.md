@@ -17,6 +17,10 @@ short_url/
 | MongoDB | Atlas |
 | Redis (queues) | Upstash |
 
+![Shortly production architecture](docs/architecture/shortly-architecture.png)
+
+How the pieces connect, and the redirect path step by step: **[docs/architecture.md](docs/architecture.md)**.
+
 **Docker** is for local full-stack runs and optional container deploys — it does not replace Upstash/Atlas unless you configure it that way. See **[docs/docker.md](docs/docker.md)**.
 
 ```bash
