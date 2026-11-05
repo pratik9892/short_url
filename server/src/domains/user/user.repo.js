@@ -16,7 +16,6 @@ export class UserRepository {
 
       return user;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
@@ -145,7 +144,6 @@ export class UserRepository {
 
       return updatePassword;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }

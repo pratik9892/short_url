@@ -5,13 +5,13 @@ import { createAnalyticsWorker } from "./infrastructure/queue/analyticsQueue.js"
 import { config as appConfig } from "./config/server.config.js";
 import { logRedisConfig } from "./config/redis.config.js";
 import { connectToDB } from "./config/mongodb.config.js";
+import { logger } from "./infrastructure/logger/logger.js";
 
 configDotenv();
 
 async function startWorker() {
-  console.log(`Background Worker Process Started.`);
+  logger.info("worker starting");
   logRedisConfig();
-  console.log("Listening for jobs on 'emailQueue' and 'analyticsQueue'...");
 
   await connectToDB();
 
@@ -19,11 +19,10 @@ async function startWorker() {
   createEmailWorker();
   createAnalyticsWorker();
 
-  console.log("Worker connected to MongoDB");
-  console.log("Workers initialized and listening for jobs");
+  logger.info({ queues: ["emailQueue", "analyticsQueue"] }, "workers ready");
 }
 
 startWorker().catch((err) => {
-  console.error("Worker startup failed", err);
+  logger.fatal({ err }, "worker startup failed");
   process.exit(1);
 });

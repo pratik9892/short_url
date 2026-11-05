@@ -10,11 +10,14 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 import { configDotenv } from "dotenv"
 import { redirectToLongUrl } from "./domains/link/link.contoller.js"
+import { requestLogger } from "./middleware/requestLogger.middleware.js"
+import { logger } from "./infrastructure/logger/logger.js"
 
 configDotenv()
 const app = express()
 app.set("trust proxy", 1)
 
+app.use(requestLogger)
 app.use(cors(getCorsOptions()))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -41,6 +44,6 @@ app.use(errHandler)
 app.listen(config.server.PORT, async () => {
   logAIConfig()
   logRedisConfig()
-  console.log("Server is runnig on port " + config.server.PORT)
+  logger.info({ port: config.server.PORT }, "API listening")
   await connectToDB()
 })
