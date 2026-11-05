@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "31108b33-a29c-4c7d-ad29-b3a55c066551",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\HP\\Desktop\\short_url\\.archify\\architecture-shortly-20261105-172737\\candidate.json",
+  "output": "C:\\Users\\HP\\Desktop\\short_url\\.archify\\architecture-shortly-20261105-172737\\shortly-architecture.html",
+  "specification": {
+    "sha256": "1dcda702f25c491ec379c0f95e8248fce1affacd2b6544d23e395c80b3b9bea9",
+    "bytes": 6596
+  },
+  "artifact": {
+    "sha256": "21f1d3d41ad2c125266543b2be2ba0f6449ba0ea824ae4b4573a54851e7f650e",
+    "bytes": 855765
+  }
+}

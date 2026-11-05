@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Shortly Production Architecture",
+    "output": ".archify/architecture-shortly-20261105-172737/shortly-architecture.html",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/pratik9892/short_url.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "e76fbfd9210eaa470c8dda2c4059844866805649"
+    }
+  },
+  "components": [
+    {
+      "id": "browser", "type": "external", "label": "Browser", "sublabel": "user or link visitor",
+      "pos": [40, 250], "size": [130, 62]
+    },
+    {
+      "id": "spa", "type": "frontend", "label": "React SPA", "sublabel": "Vercel, react-router",
+      "pos": [250, 110], "size": [150, 62],
+      "sources": [
+        { "path": "client/src/App.jsx", "line": 19, "end_line": 29, "label": "routes" },
+        { "path": "client/src/api.js", "line": 13, "end_line": 21, "label": "request() with Bearer" },
+        { "path": "CLAUDE.md", "line": 12, "label": "deployment" }
+      ]
+    },
+    {
+      "id": "groq", "type": "external", "label": "Groq API", "sublabel": "chat completions",
+      "pos": [430, 40], "size": [130, 56],
+      "sources": [
+        { "path": "server/src/domains/ai/ai.config.js", "line": 5, "end_line": 6, "label": "Groq base URL" },
+        { "path": "server/src/domains/ai/ai.service.js", "line": 45, "label": "fetch call" }
+      ]
+    },
+    {
+      "id": "google", "type": "external", "label": "Google OAuth", "sublabel": "ID token check",
+      "pos": [620, 40], "size": [140, 56],
+      "sources": [
+        { "path": "server/src/domains/user/googleAuth.service.js", "line": 5, "end_line": 23, "label": "verifyIdToken" }
+      ]
+    },
+    {
+      "id": "api", "type": "backend", "label": "Express API", "sublabel": "/api/v1 + /:shortCode",
+      "pos": [500, 230], "size": [190, 70], "tag": "Render",
+      "sources": [
+        { "path": "server/src/app.js", "line": 16, "end_line": 45, "label": "app + redirect route" },
+        { "path": "server/src/domains/link/link.contoller.js", "line": 31, "end_line": 60, "label": "redirect + enqueue" },
+        { "path": "server/src/domains/link/link.service.js", "line": 78, "end_line": 98, "label": "cache-aside lookup" }
+      ]
+    },
+    {
+      "id": "cache", "type": "database", "label": "Link cache", "sublabel": "link:<code>, 24h TTL",
+      "pos": [830, 150], "size": [170, 62], "tag": "Upstash",
+      "sources": [
+        { "path": "server/src/infrastructure/cache/linkCache.js", "line": 1, "end_line": 46, "label": "fail-open cache" },
+        { "path": "server/src/config/redis.config.js", "line": 44, "end_line": 50, "label": "fail-fast client" }
+      ]
+    },
+    {
+      "id": "queues", "type": "messagebus", "label": "BullMQ queues", "sublabel": "analytics + email",
+      "pos": [830, 330], "size": [170, 62], "tag": "Upstash",
+      "sources": [
+        { "path": "server/src/infrastructure/queue/analyticsQueue.js", "line": 10, "end_line": 22, "label": "analyticsQueue" },
+        { "path": "server/src/infrastructure/queue/emailQueue.js", "line": 6, "end_line": 9, "label": "emailQueue" },
+        { "path": "server/src/config/redis.config.js", "line": 13, "end_line": 38, "label": "BullMQ connection" }
+      ]
+    },
+    {
+      "id": "worker", "type": "backend", "label": "BullMQ worker", "sublabel": "geo, device, visits",
+      "pos": [500, 460], "size": [190, 66], "tag": "Render",
+      "sources": [
+        { "path": "server/src/worker.js", "line": 11, "end_line": 24, "label": "worker entry" },
+        { "path": "server/src/infrastructure/queue/analyticsQueue.js", "line": 25, "end_line": 52, "label": "click job" },
+        { "path": "server/package.json", "line": 12, "label": "start:with-worker" }
+      ]
+    },
+    {
+      "id": "mongo", "type": "database", "label": "MongoDB Atlas", "sublabel": "users, links, analytics",
+      "pos": [220, 460], "size": [170, 66],
+      "sources": [
+        { "path": "server/src/config/mongodb.config.js", "line": 4, "end_line": 12, "label": "mongoose connect" },
+        { "path": "server/src/domains/link/link.model.js", "line": 3, "end_line": 34, "label": "Link model" },
+        { "path": "server/src/domains/analytics/analytics.model.js", "line": 3, "end_line": 64, "label": "Analytics model" }
+      ]
+    },
+    {
+      "id": "sendgrid", "type": "external", "label": "SendGrid", "sublabel": "welcome email",
+      "pos": [830, 520], "size": [150, 56],
+      "sources": [
+        { "path": "server/src/infrastructure/utils/email.utils.js", "line": 1, "end_line": 16, "label": "sgMail" }
+      ]
+    }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Render instance", "wraps": ["api", "worker"], "pad": 18 },
+    { "kind": "region", "label": "Upstash Redis", "wraps": ["cache", "queues"], "pad": 18 }
+  ],
+  "connections": [
+    { "from": "browser", "to": "spa", "label": "loads app" },
+    { "from": "spa", "to": "api", "label": "REST + JWT", "variant": "emphasis" },
+    { "from": "browser", "to": "api", "label": "GET /:code, 302", "variant": "emphasis" },
+    { "from": "api", "to": "cache", "label": "get / set" },
+    { "from": "api", "to": "queues", "label": "enqueue click", "variant": "dashed" },
+    { "from": "queues", "to": "worker", "label": "jobs", "variant": "dashed" },
+    { "from": "api", "to": "mongo", "label": "miss + CRUD" },
+    { "from": "worker", "to": "mongo", "label": "click, visits+1" },
+    { "from": "api", "to": "groq", "label": "AI insights" },
+    { "from": "api", "to": "google", "label": "verify", "variant": "security" },
+    { "from": "worker", "to": "sendgrid", "label": "send" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan", "title": "Redirect hot path",
+      "items": [
+        "Redis first, MongoDB on a miss, then cached for 24h",
+        "Cache fails open with a 250ms timeout, so Redis outages fall back to MongoDB",
+        "The click is enqueued without awaiting; the worker writes analytics"
+      ]
+    },
+    {
+      "dot": "violet", "title": "Two Redis connections",
+      "items": [
+        "BullMQ: retries forever (maxRetriesPerRequest: null), one duplicate per worker",
+        "Cache: no offline queue, 0 retries, so it never stalls a redirect"
+      ]
+    },
+    {
+      "dot": "amber", "title": "Local docker-compose",
+      "items": [
+        "nginx serves the built SPA and proxies /api and /health to the api container",
+        "mongo:7 and redis:7-alpine replace Atlas and Upstash",
+        "api and worker run as separate containers from the same image"
+      ]
+    }
+  ]
+}
