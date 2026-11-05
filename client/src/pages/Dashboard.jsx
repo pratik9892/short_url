@@ -36,7 +36,8 @@ export default function Dashboard() {
   const [longUrl, setLongUrl] = useState('')
   const [linkName, setLinkName] = useState('')
   const [insight, setInsight] = useState('')
-  const [aiBusy, setAiBusy] = useState(false)
+  const [insightBusy, setInsightBusy] = useState(false)
+  const [askBusy, setAskBusy] = useState(false)
   const [askAnswer, setAskAnswer] = useState('')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
@@ -198,15 +199,15 @@ export default function Dashboard() {
       show('Create a link first', 'info')
       return
     }
-    setAiBusy(true)
+    setInsightBusy(true)
     try {
       const res = await api.ai.insight()
       setInsight(res?.data?.insight || '')
-      show(`Insight ready (${res?.data?.provider || 'AI'})`, 'success')
+      show('Insight ready', 'success')
     } catch (err) {
       show(err.message || 'AI unavailable', 'error')
     } finally {
-      setAiBusy(false)
+      setInsightBusy(false)
     }
   }
 
@@ -215,7 +216,7 @@ export default function Dashboard() {
     const fd = new FormData(e.currentTarget)
     const question = String(fd.get('question') || '').trim()
     if (!question) return
-    setAiBusy(true)
+    setAskBusy(true)
     try {
       const res = await api.ai.ask(question)
       setAskAnswer(res?.data?.answer || '')
@@ -223,7 +224,7 @@ export default function Dashboard() {
     } catch (err) {
       show(err.message || 'Could not answer', 'error')
     } finally {
-      setAiBusy(false)
+      setAskBusy(false)
     }
   }
 
@@ -437,10 +438,10 @@ export default function Dashboard() {
             description="A summary of how your links perform."
             className="dash-ai ui-panel"
           >
-            <div className={`dash-ai__body${aiBusy && !insight ? ' is-thinking' : ''}`}>
+            <div className={`dash-ai__body${insightBusy && !insight ? ' is-thinking' : ''}`}>
               {insight ? (
                 <CollapsibleText key={insight} text={insight} collapsedLines={5} maxHeight="8rem" />
-              ) : aiBusy ? (
+              ) : insightBusy ? (
                 <div className="dash-ai__skeleton">
                   <span className="skeleton" style={{ width: '95%' }} />
                   <span className="skeleton" style={{ width: '80%' }} />
@@ -454,18 +455,18 @@ export default function Dashboard() {
               type="button"
               className="btn btn-ghost btn-sm dash-ai__btn"
               onClick={onAskInsight}
-              disabled={aiBusy}
+              disabled={insightBusy}
             >
-              {aiBusy ? <span className="spinner" /> : <IconSparkles size={14} />}
-              {aiBusy ? 'Thinking…' : insight ? 'Regenerate' : 'Generate insight'}
+              {insightBusy ? <span className="spinner" /> : <IconSparkles size={14} />}
+              {insightBusy ? 'Thinking…' : insight ? 'Regenerate' : 'Generate insight'}
             </button>
           </Card>
 
           <Card title="Ask AI" description="Questions about all your links." className="dash-ask ui-panel">
             <form className="ask-form" onSubmit={onAskQuestion}>
               <input className="input" name="question" maxLength={500} placeholder="What should I promote?" />
-              <button className="btn btn-primary btn-icon" type="submit" disabled={aiBusy} aria-label="Ask">
-                {aiBusy ? <span className="spinner" /> : <IconSend size={15} />}
+              <button className="btn btn-primary btn-icon" type="submit" disabled={askBusy} aria-label="Ask">
+                {askBusy ? <span className="spinner" /> : <IconSend size={15} />}
               </button>
             </form>
             {askAnswer && (
