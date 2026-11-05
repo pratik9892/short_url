@@ -241,7 +241,7 @@ async function suggestLinkName(longUrl) {
 async function analyticsSummary(link, rows = []) {
   const stats = aggregateStats(rows)
   const summary = await chat(
-    "Write 2-3 sentences summarizing this link's click analytics. End with one recommendation. Max 90 words. If there are zero clicks, say so and suggest how to get traffic.",
+    "Summarize this link's click analytics in 50-70 words, in plain sentences. End with one recommendation. If there are zero clicks, say so and suggest how to get traffic.",
     `Link: ${link.linkName || link.shortCode}, clicks: ${rows.length}, devices: ${JSON.stringify(stats.devices)}, countries: ${stats.countriesSize}, top_countries: ${JSON.stringify(stats.countries)}`
   )
   return { summary, provider: "llm" }
@@ -260,22 +260,6 @@ async function detectAnomalies(link, rows = []) {
   const parsed = tryParseJSON(text)
   const anomalies = Array.isArray(parsed?.anomalies) ? parsed.anomalies : []
   return { anomalies, provider: "llm" }
-}
-
-async function forecastClicks(link, rows = []) {
-  const { days } = aggregateStats(rows)
-  const text = await chat(
-    'Predict clicks for the next 7 days from this history. Reply with JSON only: {"forecast":[7 numbers]}.',
-    JSON.stringify({ link: link.linkName || link.shortCode, days }),
-    // gpt-oss models spend tokens reasoning before answering; 120 left the answer empty
-    { max_tokens: 700 }
-  )
-  const parsed = tryParseJSON(text)
-  let forecast = Array.isArray(parsed?.forecast) ? parsed.forecast.map((n) => Math.max(0, Math.round(Number(n) || 0))) : []
-  if (forecast.length !== 7) {
-    forecast = Array.from({ length: 7 }, () => 0)
-  }
-  return { forecast, provider: "llm" }
 }
 
 async function audiencePersona(link, rows = []) {
@@ -304,7 +288,6 @@ export const AIService = {
   suggestLinkName,
   analyticsSummary,
   detectAnomalies,
-  forecastClicks,
   audiencePersona,
   askQuestion,
   _aggregate: aggregateStats,
