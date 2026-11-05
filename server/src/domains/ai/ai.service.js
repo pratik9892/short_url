@@ -255,7 +255,7 @@ async function detectAnomalies(link, rows = []) {
   const text = await chat(
     'Analyze daily click counts. Reply with JSON only: {"anomalies":[{"date":"M/D","count":number,"type":"spike","severity":number,"reason":"string"}]}. Use empty anomalies array if none.',
     JSON.stringify({ link: link.linkName || link.shortCode, days }),
-    { max_tokens: 400 }
+    { max_tokens: 900 }
   )
   const parsed = tryParseJSON(text)
   const anomalies = Array.isArray(parsed?.anomalies) ? parsed.anomalies : []
@@ -267,7 +267,8 @@ async function forecastClicks(link, rows = []) {
   const text = await chat(
     'Predict clicks for the next 7 days from this history. Reply with JSON only: {"forecast":[7 numbers]}.',
     JSON.stringify({ link: link.linkName || link.shortCode, days }),
-    { max_tokens: 120 }
+    // gpt-oss models spend tokens reasoning before answering; 120 left the answer empty
+    { max_tokens: 700 }
   )
   const parsed = tryParseJSON(text)
   let forecast = Array.isArray(parsed?.forecast) ? parsed.forecast.map((n) => Math.max(0, Math.round(Number(n) || 0))) : []
@@ -292,7 +293,7 @@ async function askQuestion(question, context = {}) {
     throw new badRequest("question", { hint: "Question is required" })
   }
   const answer = await chat(
-    "You are Shortly, a concise analytics assistant. Answer using only the JSON context. Max 100 words.",
+    "You are Shortly, a concise analytics assistant. Answer the question using only the data provided. Reply in plain conversational sentences, never JSON, code blocks or raw field names. Max 100 words.",
     `Question: ${trimmed}\nContext: ${JSON.stringify(context)}`
   )
   return { answer, provider: "llm" }
