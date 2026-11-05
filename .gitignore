@@ -1,2 +1,4 @@
 node_modules/
 .env
+# archify diagram output (viewer HTML, check receipts, screenshots); the diagram lives in docs/architecture.md
+.archify/
