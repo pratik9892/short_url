@@ -4,6 +4,7 @@ import { NotFound } from "../../errors/notFound.js";
 import { generateShortCode } from "../../utils/shortCode.util.js";
 import { AnalyticsRepository } from "../analytics/analytics.repo.js";
 import { AnalyticsService } from "../analytics/analytics.service.js";
+import { logger } from "../../infrastructure/logger/logger.js";
 
 const MAX_SHORT_CODE_ATTEMPTS = 5
 
@@ -39,7 +40,7 @@ export class LinkService{
                     return await this.LinkRepository.createLink(shortUrl)
                 } catch (error) {
                     if (!isDuplicateShortCodeError(error)) throw error
-                    console.warn("[link] short code collision, retrying", { shortCode: shortUrl.shortCode, attempt })
+                    logger.warn({ shortCode: shortUrl.shortCode, attempt }, "short code collision, retrying")
                 }
             }
 

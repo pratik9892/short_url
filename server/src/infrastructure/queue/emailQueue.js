@@ -2,6 +2,7 @@ import { Queue, Worker, Job } from "bullmq";
 import { REDIS_CONNECTION, redisDuplicate } from "../../config/redis.config.js";
 import { sendWelcomeEmail } from "../utils/email.utils.js";
 import { ConflictError } from "../../errors/conflictError.js";
+import { logger } from "../logger/logger.js";
 
 const QUEUE_NAME = "emailQueue";
 
@@ -28,7 +29,7 @@ export function createEmailWorker() {
         throw new ConflictError("username or email not found");
       }
 
-      console.log("Attempting to send email to " + email);
+      logger.info({ jobId: job.id }, "sending welcome email");
 
       const result = await sendWelcomeEmail(email, username);
 
@@ -37,20 +38,15 @@ export function createEmailWorker() {
     { connection: redisDuplicate() }
   );
 
+  // job.data holds the user's email and username: log the job id only
   emailWorker.on("completed", (job) => {
-    console.log({
-      jobData: job.data,
-      message: "JOB COMPLETED",
-    });
+    logger.info({ jobId: job.id }, "welcome email job completed");
   });
-  emailWorker.on("failed", (job) => {
-    console.log({
-      jobData: job,
-      message: "JOB FAILED",
-    });
+  emailWorker.on("failed", (job, err) => {
+    logger.error({ jobId: job?.id, err }, "welcome email job failed");
   });
-  emailWorker.on("error", (job) => {
-    console.log(`JOB error ${job}`);
+  emailWorker.on("error", (err) => {
+    logger.error({ err }, "email worker error");
   });
 
   return emailWorker;

@@ -1,4 +1,5 @@
 import geoip from "geoip-lite";
+import { logger } from "../logger/logger.js";
 
 export function getGeoFromIp(ip) {
   if (!ip) return {};
@@ -18,7 +19,7 @@ export function getGeoFromIp(ip) {
       city: geo.city || undefined,
     };
   } catch (error) {
-    console.error("GeoIP lookup failed", error);
+    logger.warn({ err: error }, "GeoIP lookup failed");
     return {};
   }
 }

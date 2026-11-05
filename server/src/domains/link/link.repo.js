@@ -19,7 +19,6 @@ export class LinkRepository {
 
             return createdLink;
         } catch (error) {
-            console.log(error);
             throw error
         }
     }
@@ -31,7 +30,6 @@ export class LinkRepository {
             
             return longUrl;
         } catch (error) {
-            console.log(error);
             throw error
         }
     }
@@ -53,7 +51,6 @@ export class LinkRepository {
 
             return shortUrl;
         } catch (error) {
-            console.log(error);
             throw error
         }
     }
@@ -67,7 +64,6 @@ export class LinkRepository {
             }
             return allShortUrls;
         } catch (error) {
-            console.log(error);
             throw error
         }
     }
@@ -79,7 +75,6 @@ export class LinkRepository {
             
             return shortUrl;
         } catch (error) {
-            console.log(error);
             throw error
         }
     }
@@ -112,7 +107,6 @@ export class LinkRepository {
 
             return updatedShortUrl
         } catch (error) {
-            console.log(error);
             throw error
         }
     }
@@ -132,7 +126,6 @@ export class LinkRepository {
             // null when the link was deleted before the worker ran — not an error, so the job isn't retried
             return updatedVisits?.visits ?? null
         } catch (error) {
-            console.log(error);
             throw error
         }
     }
@@ -154,7 +147,6 @@ export class LinkRepository {
             
             return deletedLink
         } catch (error) {
-            console.log(error);
             throw error
         }
     }

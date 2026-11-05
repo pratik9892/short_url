@@ -1,4 +1,5 @@
 import { createCacheClient } from "../../config/redis.config.js";
+import { logger } from "../logger/logger.js";
 
 const KEY_PREFIX = "link:";
 const TTL_SECONDS = 60 * 60 * 24;
@@ -14,7 +15,7 @@ export function createLinkCache(client, { ttlSeconds = TTL_SECONDS } = {}) {
         const raw = await client.get(KEY_PREFIX + shortCode);
         return raw ? JSON.parse(raw) : null;
       } catch (error) {
-        console.error("[cache] get failed", error?.message || error);
+        logger.warn({ err: error }, "cache get failed");
         return null;
       }
     },
@@ -29,7 +30,7 @@ export function createLinkCache(client, { ttlSeconds = TTL_SECONDS } = {}) {
         });
         await client.set(KEY_PREFIX + link.shortCode, value, "EX", ttlSeconds);
       } catch (error) {
-        console.error("[cache] set failed", error?.message || error);
+        logger.warn({ err: error }, "cache set failed");
       }
     },
 
@@ -37,7 +38,7 @@ export function createLinkCache(client, { ttlSeconds = TTL_SECONDS } = {}) {
       try {
         await client.del(KEY_PREFIX + shortCode);
       } catch (error) {
-        console.error("[cache] invalidate failed", error?.message || error);
+        logger.warn({ err: error }, "cache invalidate failed");
       }
     },
   };

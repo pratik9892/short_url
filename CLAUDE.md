@@ -41,7 +41,8 @@ Domain-based layout under `server/src/domains/<domain>/` (`link`, `analytics`, `
 - Controllers wrap logic in `try/catch` and call `next(error)`. Services throw typed errors from `src/errors/` (all extend `baseError`); `utils/error.util.js` turns them into the JSON response.
 - Response shape: `{ status/success, message, error, data }`.
 - Routes are mounted under `/api/v1` (`routes/v1/index.js`). `GET /:shortCode` in `app.js` is the redirect.
-- `infrastructure/` holds the cross-cutting pieces: Redis link cache (`cache/`), BullMQ queues and workers (`queue/`), and helpers (`utils/`: geoip, user-agent, email).
+- `infrastructure/` holds the cross-cutting pieces: Redis link cache (`cache/`), BullMQ queues and workers (`queue/`), logger (`logger/`), and helpers (`utils/`: geoip, user-agent, email).
+- Logging: use `logger` from `infrastructure/logger/logger.js` (pino), or `req.log` inside request handlers so lines carry the request ID. Never use `console.*`. Log IDs, not personal data: job data, request bodies and visitor IPs stay out of logs. Redaction rules (tokens, passwords, cookies, masked emails) live in `logger.js` and are tested. Errors reaching `errHandler` are logged once on the request line, so don't log-and-rethrow in repos or services.
 - The redirect path is cache-aside (Redis, then Mongo) and enqueues the click to `analyticsQueue`; the worker (`src/worker.js`) does the analytics write so the redirect never waits on it.
 - `app.set("trust proxy", 1)`: use `req.ip` for client IPs, never raw `X-Forwarded-For`.
 - `middleware/rateLimit.middleware.js` is an in-memory fixed-window limiter: counts are per process, not shared across instances.

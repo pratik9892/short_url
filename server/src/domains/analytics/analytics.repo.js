@@ -25,7 +25,6 @@ export class AnalyticsRepository {
         clickedAt: data.clickedAt || new Date(),
       })
     } catch (error) {
-      console.log(error)
       throw error
     }
   }
@@ -34,7 +33,6 @@ export class AnalyticsRepository {
     try {
       return await Analytics.deleteMany({ link: linkId })
     } catch (error) {
-      console.log(error)
       throw error
     }
   }
@@ -43,7 +41,6 @@ export class AnalyticsRepository {
     try {
       return await Analytics.updateMany({ link: linkId }, { $set: { longUrl } })
     } catch (error) {
-      console.log(error)
       throw error
     }
   }
@@ -55,7 +52,6 @@ export class AnalyticsRepository {
         clickedAt: -1,
       })
     } catch (error) {
-      console.log(error)
       throw error
     }
   }
@@ -65,7 +61,6 @@ export class AnalyticsRepository {
       const ownerId = normalizeOwnerId(userId)
       return await Analytics.find({ linkOwner: ownerId }).sort({ clickedAt: -1 })
     } catch (error) {
-      console.log(error)
       throw error
     }
   }

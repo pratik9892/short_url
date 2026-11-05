@@ -1,4 +1,5 @@
 import { UAParser } from "ua-parser-js";
+import { logger } from "../logger/logger.js";
 
 export function getDeviceFromUserAgent(userAgent) {
   if (!userAgent) return {};
@@ -16,7 +17,7 @@ export function getDeviceFromUserAgent(userAgent) {
           : "desktop",
     };
   } catch (error) {
-    console.error("User-agent parsing failed", error);
+    logger.warn({ err: error }, "user-agent parsing failed");
     return {};
   }
 }

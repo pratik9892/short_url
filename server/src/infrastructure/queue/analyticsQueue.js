@@ -6,6 +6,7 @@ import { LinkService } from "../../domains/link/link.service.js";
 import { LinkRepository } from "../../domains/link/link.repo.js";
 import { getGeoFromIp } from "../utils/geoip.util.js";
 import { getDeviceFromUserAgent } from "../utils/ua.util.js";
+import { logger } from "../logger/logger.js";
 
 const QUEUE_NAME = "analyticsQueue";
 
@@ -52,15 +53,15 @@ export function createAnalyticsWorker() {
   );
 
   analyticsWorker.on("completed", (job) => {
-    console.log("Analytics job completed", { id: job.id, data: job.data });
+    logger.debug({ jobId: job.id }, "analytics job completed");
   });
 
   analyticsWorker.on("failed", (job, err) => {
-    console.error("Analytics job failed", { id: job?.id, err });
+    logger.error({ jobId: job?.id, err }, "analytics job failed");
   });
 
   analyticsWorker.on("error", (err) => {
-    console.error("Analytics worker error", err);
+    logger.error({ err }, "analytics worker error");
   });
 
   return analyticsWorker;

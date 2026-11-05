@@ -30,7 +30,6 @@ describe("createLinkCache", () => {
   it("fails open when Redis errors", async () => {
     const boom = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
     const cache = createLinkCache({ get: boom, set: boom, del: boom });
-    vi.spyOn(console, "error").mockImplementation(() => {});
 
     await expect(cache.get("abc")).resolves.toBeNull();
     await expect(cache.set({ _id: "1", shortCode: "abc" })).resolves.toBeUndefined();

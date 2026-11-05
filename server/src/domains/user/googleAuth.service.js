@@ -1,6 +1,7 @@
 import { OAuth2Client } from "google-auth-library";
 import { config } from "../../config/server.config.js";
 import { UnauthorizedError } from "../../errors/unauthorizedError.js";
+import { logger } from "../../infrastructure/logger/logger.js";
 
 const client = new OAuth2Client(config.google.CLIENT_ID);
 
@@ -42,7 +43,10 @@ export async function verifyGoogleIdToken(credential) {
     };
   } catch (error) {
     if (error instanceof UnauthorizedError) throw error;
-    console.error("Google token verification failed", error?.message || error);
+    logger.warn(
+      { reason: String(error?.message || error).replace(/[\w-]+\.[\w-]+\.[\w-]+/g, "[token]") },
+      "Google token verification failed"
+    );
     throw new UnauthorizedError("Invalid or expired Google token");
   }
 }

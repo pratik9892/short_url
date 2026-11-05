@@ -1,5 +1,6 @@
 import Redis from "ioredis"
 import { config } from "./server.config.js"
+import { logger } from "../infrastructure/logger/logger.js"
 
 /** See server/docs/redis-flow.md */
 function toUpstashTlsUrl(url) {
@@ -53,17 +54,15 @@ export function logRedisConfig() {
   const url = config.redis.URL?.trim()
   const usingUrl = Boolean(url)
 
-  console.log("[redis] config", {
+  logger.info({
     REDIS_URL_present: usingUrl,
     REDIS_URL_length: url?.length ?? 0,
     ioredis_host: REDIS_CONNECTION.options?.host,
     ioredis_port: REDIS_CONNECTION.options?.port,
     tls: Boolean(REDIS_CONNECTION.options?.tls),
-  })
+  }, "Redis config")
 
   if (!usingUrl && config.redis.HOST === "127.0.0.1") {
-    console.warn(
-      "[redis] No REDIS_URL — using localhost. Set REDIS_URL on Render."
-    )
+    logger.warn("No REDIS_URL — using localhost. Set REDIS_URL on Render.")
   }
 }
