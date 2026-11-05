@@ -121,16 +121,6 @@ async function chat(system, user, opts = {}) {
   return String(content).trim()
 }
 
-function tryParseJSON(text) {
-  if (!text) return null
-  try {
-    const match = text.match(/```(?:json)?\s*([\s\S]*?)```/i)
-    return JSON.parse(match ? match[1] : text)
-  } catch {
-    return null
-  }
-}
-
 function safeHost(longUrl) {
   try {
     return new URL(longUrl).hostname.replace(/^www\./, "")
@@ -247,21 +237,6 @@ async function analyticsSummary(link, rows = []) {
   return { summary, provider: "llm" }
 }
 
-async function detectAnomalies(link, rows = []) {
-  if (!rows.length) {
-    return { anomalies: [], provider: "llm" }
-  }
-  const { days } = aggregateStats(rows)
-  const text = await chat(
-    'Analyze daily click counts. Reply with JSON only: {"anomalies":[{"date":"M/D","count":number,"type":"spike","severity":number,"reason":"string"}]}. Use empty anomalies array if none.',
-    JSON.stringify({ link: link.linkName || link.shortCode, days }),
-    { max_tokens: 900 }
-  )
-  const parsed = tryParseJSON(text)
-  const anomalies = Array.isArray(parsed?.anomalies) ? parsed.anomalies : []
-  return { anomalies, provider: "llm" }
-}
-
 async function audiencePersona(link, rows = []) {
   const stats = aggregateStats(rows)
   const persona = await chat(
@@ -287,7 +262,6 @@ export const AIService = {
   dashboardInsight,
   suggestLinkName,
   analyticsSummary,
-  detectAnomalies,
   audiencePersona,
   askQuestion,
   _aggregate: aggregateStats,
