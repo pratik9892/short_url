@@ -63,15 +63,14 @@ async function getLinkAIAnalytics(req, res, next) {
     let rows = (await analyticsRepo.getAnalyticsForLink(linkId, req.user._id)) || []
     if (!Array.isArray(rows)) rows = []
 
-    // allSettled: one failed AI call (e.g. a truncated forecast) must not blank the whole page
-    const parts = ["summary", "anomalies", "forecast", "persona"]
+    // allSettled: one failed AI call must not blank the whole page
+    const parts = ["summary", "anomalies", "persona"]
     const results = await Promise.allSettled([
       AIService.analyticsSummary(link, rows),
       AIService.detectAnomalies(link, rows),
-      AIService.forecastClicks(link, rows),
       AIService.audiencePersona(link, rows),
     ])
-    const [summary, anomalies, forecast, persona] = results.map((r, i) => {
+    const [summary, anomalies, persona] = results.map((r, i) => {
       if (r.status === "fulfilled") return r.value
       console.error(`[ai] link ${parts[i]} failed`, r.reason?.message || r.reason)
       return null
@@ -81,7 +80,7 @@ async function getLinkAIAnalytics(req, res, next) {
       success: true,
       message: "AI analytics generated",
       error: {},
-      data: { summary, anomalies, forecast, persona, clicks: rows.length },
+      data: { summary, anomalies, persona, clicks: rows.length },
     })
   } catch (err) {
     next(err)

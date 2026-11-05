@@ -131,8 +131,6 @@ export default function Analytics() {
 
   const summaryText = ai?.summary?.summary || ''
   const personaText = ai?.persona?.persona || ''
-  const forecast = Array.isArray(ai?.forecast?.forecast) ? ai.forecast.forecast.map((n) => Number(n || 0)) : null
-  const maxForecast = forecast ? Math.max(1, ...forecast) : 1
   const deviceTotal = stats.devices.desktop + stats.devices.mobile + stats.devices.tablet
   const deviceRows = [
     { key: 'desktop', label: 'Desktop', value: stats.devices.desktop },
@@ -271,30 +269,6 @@ export default function Analytics() {
               </div>
             )}
           </Card>
-
-          {forecast && (
-            <Card
-              title="7-day forecast"
-              className="analytics-forecast"
-              action={
-                <span className="analytics-chart__total">
-                  ~{forecast.reduce((a, b) => a + b, 0).toLocaleString()} clicks
-                </span>
-              }
-            >
-              <div className="forecast-row">
-                {forecast.map((n, i) => (
-                  <div key={i} className="forecast-col" style={{ '--i': i }}>
-                    <div className="forecast-track">
-                      <div className="forecast-bar" style={{ height: `${Math.max(6, (n / maxForecast) * 100)}%` }} />
-                    </div>
-                    <strong>{n}</strong>
-                    <span>D{i + 1}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
 
           <Card title="Ask about this link" className="analytics-ask">
             <form className="ask-form" onSubmit={onAsk}>
