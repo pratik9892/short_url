@@ -17,8 +17,6 @@ export class UserService {
   async createAuthTokens(user) {
     const refreshToken = generateRefreshToken({ userId: user._id });
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-    console.log(refreshToken,hashedRefreshToken , "refresh and hashed refresh in createauthtokesn");
-    
 
     const tokensave = await this.UserRepository.updateRefreshToken(
       user._id,
@@ -26,7 +24,6 @@ export class UserService {
     );
 
     const accessToken = generateAccessToken({ userId: user._id });
-    console.log(accessToken , "accessToken in auth tokens");
     
     return { refreshToken, accessToken };
   }
@@ -241,7 +238,6 @@ export class UserService {
         userId,
         hashedNewPassword
       );
-      console.log(updatedPassword);
 
       return updatedPassword;
     } catch (error) {
