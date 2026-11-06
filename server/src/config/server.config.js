@@ -38,8 +38,8 @@ export const config = {
     },
 
     email : {
-        SENDGRID_APIKEY : process.env.SENDGRID_API_KEY,
-        SENDGRID_SENDER_EMAIL : process.env.SENDER_EMAIL
+        RESEND_API_KEY : process.env.RESEND_API_KEY,
+        RESEND_FROM_EMAIL : process.env.RESEND_FROM_EMAIL
     },
 
     google: {

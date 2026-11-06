@@ -1,28 +1,22 @@
-import sgMail from "@sendgrid/mail"
 import { config } from "../../config/server.config.js"
 import {ConflictError} from "../../errors/conflictError.js"
-import { configDotenv } from "dotenv"
 import { logger } from "../logger/logger.js"
 
-configDotenv()
+const RESEND_URL = "https://api.resend.com/emails"
 
-if(config.email.SENDGRID_APIKEY){
-    sgMail.setApiKey(config.email.SENDGRID_APIKEY)
-} else {
-    logger.warn("SENDGRID_API_KEY missing; welcome emails will fail")
+// Resend's shared test sender: only delivers to the Resend account's own email.
+// Set RESEND_FROM_EMAIL to an address on a verified domain to email real users.
+const DEFAULT_FROM = "Shortly <onboarding@resend.dev>"
+
+if(!config.email.RESEND_API_KEY){
+    logger.warn("RESEND_API_KEY missing; welcome emails will fail")
 }
 
 
 export async function sendWelcomeEmail(email,username){
-    const senderEmail = config.email.SENDGRID_SENDER_EMAIL || "test@example.com";
-
-     if (senderEmail === 'test@example.com') {
-        logger.warn("SENDER_EMAIL not set; using placeholder sender");
-    }
-
     const message = {
-        to: email,
-        from: senderEmail,
+        to: [email],
+        from: config.email.RESEND_FROM_EMAIL || DEFAULT_FROM,
         subject: `Welcome to the ShortURL App, ${username}! Your Account is Ready.`,
         text: `Hello ${username},\n\nThank you for signing up! We're excited to have you onboard.`,
         html: `
@@ -33,16 +27,24 @@ export async function sendWelcomeEmail(email,username){
             </div>
         `,
     };
-    
 
-    try {
-            const [response] = await sgMail.send(message);
+    const response = await fetch(RESEND_URL, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${config.email.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(message),
+    });
 
-            logger.info({ statusCode: response.statusCode }, "welcome email sent");
-            return 'EmailSent'
-            
-    } catch (error) {
-        logger.error({ statusCode: error?.code, errors: error?.response?.body?.errors }, "SendGrid send failed");
+    const body = await response.json().catch(() => ({}));
+
+    if(!response.ok){
+        // body.name/message describe the failure (e.g. validation_error); the recipient stays out of the log
+        logger.error({ statusCode: response.status, error: body.name, reason: body.message }, "Resend send failed");
         throw new ConflictError("Email not send")
     }
+
+    logger.info({ statusCode: response.status, emailId: body.id }, "welcome email sent");
+    return 'EmailSent'
 }
