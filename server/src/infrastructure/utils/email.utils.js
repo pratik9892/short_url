@@ -8,6 +8,9 @@ const RESEND_URL = "https://api.resend.com/emails"
 // Set RESEND_FROM_EMAIL to an address on a verified domain to email real users.
 const DEFAULT_FROM = "Shortly <onboarding@resend.dev>"
 
+// without a limit, a hung request would leave the email job running forever with no log
+const SEND_TIMEOUT_MS = 10_000
+
 if(!config.email.RESEND_API_KEY){
     logger.warn("RESEND_API_KEY missing; welcome emails will fail")
 }
@@ -28,14 +31,22 @@ export async function sendWelcomeEmail(email,username){
         `,
     };
 
-    const response = await fetch(RESEND_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${config.email.RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(message),
-    });
+    let response;
+    try {
+        response = await fetch(RESEND_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${config.email.RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(message),
+            signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+        });
+    } catch (error) {
+        // network failure or timeout: Resend never answered
+        logger.error({ reason: error.message }, "Resend request failed");
+        throw new ConflictError("Email not send")
+    }
 
     const body = await response.json().catch(() => ({}));
 

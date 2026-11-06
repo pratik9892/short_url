@@ -34,4 +34,10 @@ describe("sendWelcomeEmail", () => {
 
     await expect(sendWelcomeEmail("new@user.com", "newuser")).rejects.toThrow("Email not send");
   });
+
+  it("throws when the request to Resend fails or times out", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("The operation was aborted due to timeout")));
+
+    await expect(sendWelcomeEmail("new@user.com", "newuser")).rejects.toThrow("Email not send");
+  });
 });
