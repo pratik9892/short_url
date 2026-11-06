@@ -35,4 +35,11 @@ describe("createLinkCache", () => {
     await expect(cache.set({ _id: "1", shortCode: "abc" })).resolves.toBeUndefined();
     await expect(cache.invalidate("abc")).resolves.toBeUndefined();
   });
+
+  it("gives up on a Redis call that takes too long", async () => {
+    const hang = vi.fn(() => new Promise(() => {}));
+    const cache = createLinkCache({ get: hang }, { timeoutMs: 20 });
+
+    await expect(cache.get("abc")).resolves.toBeNull();
+  });
 });

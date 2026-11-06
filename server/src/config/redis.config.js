@@ -31,23 +31,46 @@ function createRedisClient() {
   })
 }
 
-export const REDIS_CONNECTION = createRedisClient()
+/**
+ * Logs "redis connected" on every (re)connect and the first error of each outage.
+ * ioredis retries every few seconds while Redis is down, so logging every error would flood the logs.
+ */
+function watchConnection(client, name) {
+  let down = false
+  client.on("ready", () => {
+    down = false
+    logger.info({ connection: name }, "redis connected")
+  })
+  client.on("error", (err) => {
+    if (down) return
+    down = true
+    logger.warn({ connection: name, reason: err.message }, "redis unavailable")
+  })
+  return client
+}
+
+export const REDIS_CONNECTION = watchConnection(createRedisClient(), "queue")
 
 /** Workers in the same process should not share one blocking connection. */
-export function redisDuplicate() {
-  return REDIS_CONNECTION.duplicate()
+export function redisDuplicate(name = "worker") {
+  return watchConnection(REDIS_CONNECTION.duplicate(), name)
 }
 
 /**
  * Cache connection that fails fast. The BullMQ connection uses maxRetriesPerRequest: null,
  * which queues commands until Redis returns — fine for jobs, but it would hang redirects.
+ * No commandTimeout here: ioredis applies it to AUTH and INFO while connecting too, and a
+ * 250 ms limit never let the TLS connection to Upstash finish. linkCache.js times each
+ * operation instead.
  */
 export function createCacheClient() {
-  return REDIS_CONNECTION.duplicate({
-    maxRetriesPerRequest: 0,
-    enableOfflineQueue: false,
-    commandTimeout: 250,
-  })
+  return watchConnection(
+    REDIS_CONNECTION.duplicate({
+      maxRetriesPerRequest: 0,
+      enableOfflineQueue: false,
+    }),
+    "cache"
+  )
 }
 
 export function logRedisConfig() {

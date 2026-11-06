@@ -33,6 +33,7 @@ async function redirectToLongUrl(req,res,next){
         const {shortCode} = req.params;
 
         const link = await linkService.getLinkByShortCode(shortCode)
+        req.log.info({ shortCode, source: link.source }, "link resolved")
 
         // "trust proxy" in app.js makes req.ip the address our proxy saw, not a client-supplied header
         const ip = req.ip;

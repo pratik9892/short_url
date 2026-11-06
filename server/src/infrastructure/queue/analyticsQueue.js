@@ -49,11 +49,11 @@ export function createAnalyticsWorker() {
       // moved off the redirect path: the worker owns every click-driven write
       await linkService.incrementVisits(rest.linkId);
     },
-    { connection: redisDuplicate() }
+    { connection: redisDuplicate("analytics-worker") }
   );
 
   analyticsWorker.on("completed", (job) => {
-    logger.debug({ jobId: job.id }, "analytics job completed");
+    logger.info({ jobId: job.id, linkId: job.data?.linkId }, "analytics job completed");
   });
 
   analyticsWorker.on("failed", (job, err) => {

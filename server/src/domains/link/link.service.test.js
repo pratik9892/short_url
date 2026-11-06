@@ -81,7 +81,7 @@ describe("LinkService.getLinkByShortCode (cache-aside)", () => {
 
     const link = await service.getLinkByShortCode("abc123");
 
-    expect(link).toEqual(cached);
+    expect(link).toEqual({ ...cached, source: "cache" });
     expect(getShortUrl).not.toHaveBeenCalled();
   });
 
@@ -99,6 +99,7 @@ describe("LinkService.getLinkByShortCode (cache-aside)", () => {
       linkOwner: dbLink.linkOwner,
       shortCode: "abc123",
       longUrl: "https://example.com",
+      source: "db",
     });
   });
 

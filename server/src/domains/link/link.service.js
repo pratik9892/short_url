@@ -75,12 +75,13 @@ export class LinkService{
         }
     }
 
-    // redirect hot path (cache-aside): Redis first, MongoDB on a miss, then populate the cache
+    // redirect hot path (cache-aside): Redis first, MongoDB on a miss, then populate the cache.
+    // source ("cache" | "db") says where the link came from, for the redirect log line
     async getLinkByShortCode(shortCode){
         try {
             const cached = await this.linkCache?.get(shortCode);
             if(cached){
-                return cached;
+                return { ...cached, source : "cache" };
             }
 
             const link = await this.LinkRepository.getShortUrl(shortCode);
@@ -95,7 +96,8 @@ export class LinkService{
                 linkId : String(link._id),
                 linkOwner : String(link.linkOwner),
                 shortCode : link.shortCode,
-                longUrl : link.longUrl
+                longUrl : link.longUrl,
+                source : "db"
             };
         } catch (error) {
             throw error;

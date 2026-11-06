@@ -35,7 +35,7 @@ export function createEmailWorker() {
 
       return result;
     },
-    { connection: redisDuplicate() }
+    { connection: redisDuplicate("email-worker") }
   );
 
   // job.data holds the user's email and username: log the job id only
