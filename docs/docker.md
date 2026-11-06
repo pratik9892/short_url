@@ -51,7 +51,7 @@ For local Docker you can still point the API at **Atlas + Upstash** by setting `
 
 ## Quick start (local full stack)
 
-1. Copy env template and add secrets (JWT, Groq, SendGrid, Google, etc.):
+1. Copy env template and add secrets (JWT, Groq, Resend, Google, etc.):
 
    ```bash
    cp server/.env.example server/.env

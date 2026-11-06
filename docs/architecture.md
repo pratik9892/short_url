@@ -23,7 +23,7 @@ flowchart LR
   mongo[(MongoDB Atlas<br/>users, links, analytics)]
   groq([Groq API])
   google([Google OAuth])
-  sendgrid([SendGrid])
+  resend([Resend])
 
   browser -->|loads app| spa
   spa -->|REST + JWT| api
@@ -33,7 +33,7 @@ flowchart LR
   api -.->|enqueue click| queues
   queues -.->|jobs| worker
   worker -->|click, visits+1| mongo
-  worker -->|welcome email| sendgrid
+  worker -->|welcome email| resend
   api -->|AI insights| groq
   api -->|verify ID token| google
 ```
@@ -50,7 +50,7 @@ flowchart LR
 | MongoDB | Atlas | Users, links and one analytics document per click. | `server/src/domains/*/*.model.js` |
 | Groq | external | Dashboard insight, link name suggestions, per-link summary and audience, and Ask AI. | `server/src/domains/ai/` |
 | Google OAuth | external | Verifies Google ID tokens; the API then issues the same JWTs as email login. | `server/src/domains/user/googleAuth.service.js` |
-| SendGrid | external | Welcome emails, sent by the worker. | `server/src/infrastructure/utils/email.utils.js` |
+| Resend | external | Welcome emails, sent by the worker. | `server/src/infrastructure/utils/email.utils.js` |
 
 ## Redirect path
 
