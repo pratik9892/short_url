@@ -7,6 +7,7 @@ import { logAIConfig } from "./domains/ai/ai.config.js"
 import { errHandler } from "./utils/error.util.js"
 import { connectToDB } from "./config/mongodb.config.js"
 import cors from "cors"
+import helmet from "helmet"
 import cookieParser from "cookie-parser"
 import { configDotenv } from "dotenv"
 import { redirectToLongUrl } from "./domains/link/link.contoller.js"
@@ -18,6 +19,9 @@ const app = express()
 app.set("trust proxy", 1)
 
 app.use(requestLogger)
+// security headers on every response (HSTS, nosniff, frame and content policies) and no X-Powered-By.
+// Referrer-Policy stays at the browser default so a redirect still tells the destination site where the visit came from.
+app.use(helmet({ referrerPolicy: { policy: "strict-origin-when-cross-origin" } }))
 app.use(cors(getCorsOptions()))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
